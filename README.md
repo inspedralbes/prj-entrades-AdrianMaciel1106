@@ -1,16 +1,26 @@
-# transversals
-Esquema mínim de carpetes pels projectes transversals
+# Plataforma de Venda d'Entrades en Temps Real
 
-És obligatori seguir aquesta estructura tot i que la podeu ampliar.
+## Integrants
+- Adrian Maciel
 
-## Atenció
-Un cop comenceu heu de canviar aquesta explicació amb la corresponent al vostre projecte (utilitzant markdown)
+## Nom del projecte
+Plataforma de Venda d'Entrades per a un Esdeveniment d'Alta Demanda (Temps Real)
 
-# Aquest fitxer ha de contenir com a mínim:
- * Nom dels integrants
- * Nom del projecte
- * Petita descripció
- * Adreça del gestor de tasques (taiga, jira, trello...)
- * Adreça del prototip gràfic del projecte (Penpot, figma, moqups...)
- * URL de producció (quan la tingueu)
- * Estat: (explicació d'en quin punt està)
+## Descripció
+Aplicació web per reservar entrades en temps real amb Socket.IO. Sistema de bloqueig temporal de seients, gestió de concurrència i panell d'administració amb dades en temps real.
+
+## Gestor de tasques
+- Herramienta: Taiga  
+- URL: [`<enllaç al tauler>`](https://tree.taiga.io/project/a22adrmacfir-tr3-compra-dentrades/timeline)
+
+## Prototip gràfic
+- Herramienta: Penpot  
+- URL: `<enllaç al prototip>`  
+- Exportacions: `/design/`
+
+## URL de producció
+- URL desplegat: `<nomBotiga.daw.inspedralbes.cat>`  
+- Documentació API: `<daw.inspedralbes.cat/...>`
+
+## Estat
+Estructura inicial creada.
