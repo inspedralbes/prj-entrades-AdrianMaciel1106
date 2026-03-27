@@ -21,6 +21,7 @@
 const { io: ioc } = require('socket.io-client');
 
 const SERVER_URL = 'http://localhost:3000';
+const EVENT_ID   = '1';
 const SEAT_ID    = 'A1';
 const TTL_MS     = 3 * 60 * 1000; // must match server TTL
 
@@ -33,9 +34,11 @@ const log = (label, ...args) =>
 function createClient(name) {
   const socket = ioc(SERVER_URL, { transports: ['websocket'] });
 
-  socket.on('connect', () =>
-    log(name, `✅ Connected  (id: ${socket.id})`)
-  );
+  socket.on('connect', () => {
+    log(name, `✅ Connected  (id: ${socket.id})`);
+    // Join the event room
+    socket.emit('join_event', { eventId: EVENT_ID });
+  });
   socket.on('disconnect', () =>
     log(name, `❌ Disconnected`)
   );
@@ -77,7 +80,7 @@ async function run() {
 
   const reservePromise = (name, socket) =>
     new Promise((resolve) => {
-      socket.emit('reserve_seat', { seatId: SEAT_ID, userId: name });
+      socket.emit('reserve_seat', { eventId: EVENT_ID, seatId: SEAT_ID, userId: name });
       socket.once('reserve_seat_response', (res) => {
         if (res.success) {
           log(name, `🏆 reserve_seat SUCCESS — expiresAt: ${res.seat.expiresAt}`);
@@ -109,7 +112,7 @@ async function run() {
   log('test', `─── Step 2: ${winnerName} confirms purchase in 2 s ───`);
   await wait(2000);
 
-  winnerSocket.emit('confirm_purchase', { seatId: SEAT_ID, userId: winnerName });
+  winnerSocket.emit('confirm_purchase', { eventId: EVENT_ID, seatId: SEAT_ID, userId: winnerName });
 
   await new Promise((resolve) => {
     winnerSocket.once('confirm_purchase_response', (res) => {
@@ -127,7 +130,7 @@ async function run() {
 
   // ── Step 3: Ask for current state of all seats ────────────────────────────
   log('test', '─── Step 3: Observer requests all seats ───');
-  observer.emit('get_all_seats');
+  observer.emit('get_all_seats', { eventId: EVENT_ID });
   await new Promise((resolve) => {
     observer.once('all_seats', ({ seats }) => {
       const target = seats.find((s) => s.id === SEAT_ID);

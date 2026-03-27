@@ -1,15 +1,7 @@
 /**
  * server.js
  * ─────────
- * Entry point: Express + Socket.IO on port 3000.
- *
- * REST endpoints:
- *   GET  /                    → health check
- *   GET  /api/seats           → list all seats (serialized)
- *   POST /api/seats/seed      → seed N seats, body: { count?: number }
- *   GET  /api/events          → list all events
- *
- * Socket.IO events: see seat.socket.js
+ * Entry point: Express + Socket.IO on port 3001.
  */
 
 require('dotenv').config();
@@ -25,7 +17,7 @@ const { createSeat, getAllSeats,
         serializeSeat }                     = require('./modules/seients/seient.model');
 const { createEvent, getAllEvents }         = require('./modules/events/event.model');
 
-const PORT          = Number(process.env.PORT) || 3000;
+const PORT          = Number(process.env.PORT) || 3001;
 const DEFAULT_SEATS = 20;
 
 // ── Express ───────────────────────────────────────────────────────────────────
@@ -37,8 +29,10 @@ app.get('/', (_req, res) =>
   res.json({ message: 'Ticket server running 🎟️', port: PORT })
 );
 
-app.get('/api/seats', (_req, res) => {
-  res.json({ seats: getAllSeats().map(serializeSeat) });
+app.get('/api/events/:eventId/seats', (req, res) => {
+  const { eventId } = req.params;
+  const seats = getAllSeats(eventId);
+  res.json({ eventId, seats: seats.map(serializeSeat) });
 });
 
 app.get('/api/events', (_req, res) => {
@@ -46,17 +40,27 @@ app.get('/api/events', (_req, res) => {
 });
 
 /**
- * POST /api/seats/seed
- * Body: { count?: number }
- * Re-creates N seats starting from A1 (overwrites existing ones).
+ * POST /api/events/:eventId/compres
+ * Confirms the purchase of a RESERVED seat.
  */
-app.post('/api/seats/seed', (req, res) => {
-  const count = Number(req.body?.count) || DEFAULT_SEATS;
-  const seeded = [];
-  for (let i = 1; i <= count; i++) {
-    seeded.push(serializeSeat(createSeat(`A${i}`)));
+app.post('/api/events/:eventId/compres', (req, res) => {
+  const { eventId } = req.params;
+  const { seatId, userId } = req.body;
+
+  if (!seatId || !userId) {
+    return res.status(400).json({ error: 'seatId and userId are required' });
   }
-  res.status(201).json({ seeded: seeded.length, seats: seeded });
+
+  const result = confirmPurchase(eventId, seatId, userId);
+
+  if (result.success) {
+    // Broadcast the SOLD status to all clients in the event room
+    io.to(eventId).emit('seat_updated', serializeSeat(result.seat));
+    console.log(`[server] Purchase confirmed: ${eventId}:${seatId} sold to ${userId}`);
+    return res.json({ success: true, seat: serializeSeat(result.seat) });
+  } else {
+    return res.status(400).json({ success: false, error: result.error });
+  }
 });
 
 // ── HTTP server ───────────────────────────────────────────────────────────────
@@ -69,42 +73,62 @@ const io = new Server(httpServer, {
 
 io.on('connection', (socket) => {
   console.log(`[socket] Connected    ${socket.id}`);
-
-  // Register all seat events, passing io for auto-release broadcasts
   registerSeatEvents(socket, io);
-
-  socket.on('disconnect', () =>
-    console.log(`[socket] Disconnected ${socket.id}`)
-  );
+  socket.on('disconnect', () => console.log(`[socket] Disconnected ${socket.id}`));
 });
 
-// ── Safety-net sweep: release any missed expired reservations every 60 s ─────
+// ── Safety-net sweep ─────────────────────────────────────────────────────────
 setInterval(() => {
   const released = releaseExpiredReservations();
   released.forEach((seat) => {
-    io.emit('seat_updated', serializeSeat(seat));
-    console.log(`[sweep]  Seat ${seat.id} released by safety-net sweep`);
+    io.to(seat.eventId).emit('seat_updated', serializeSeat(seat));
+    console.log(`[sweep]  Seat ${seat.eventId}:${seat.id} released by safety-net sweep`);
   });
-}, 60_000);
+}, 30000);
+
+const { getNowPlayingMovies }               = require('./modules/movies/movie.service');
+
+
 
 // ── Seed default data on startup ──────────────────────────────────────────────
-(() => {
-  // Seats
-  for (let i = 1; i <= DEFAULT_SEATS; i++) createSeat(`A${i}`);
-  console.log(`[server] Seeded ${DEFAULT_SEATS} seats`);
+(async () => {
+  // Movies from TMDB
+  const movies = await getNowPlayingMovies();
+  
+  movies.forEach(movie => {
+    createEvent(
+      movie.id, 
+      movie.nom, 
+      movie.data, 
+      movie.lloc, 
+      movie.imatge, 
+      movie.backdrop, 
+      movie.sinopsi, 
+      movie.rating
+    );
+  });
 
-  // Events
-  createEvent('1', 'Concert Rock', '2026-06-15', 'Palau Sant Jordi');
-  createEvent('2', 'Teatre: Els Miserables', '2026-07-20', 'Teatre Nacional');
-  createEvent('3', 'Festival de Jazz', '2026-08-05', 'Parc de la Ciutadella');
-  console.log(`[server] Seeded 3 default events`);
+  console.log(`[server] Seeded ${movies.length} movies from TMDB (or mock)`);
+
+  const rows = [
+    { name: 'A', category: 'STANDARD', price: 9.50 },
+    { name: 'B', category: 'STANDARD', price: 9.50 },
+    { name: 'C', category: 'PREMIUM',  price: 12.00 },
+    { name: 'D', category: 'VIP',      price: 18.00 }
+  ];
+
+  movies.forEach(movie => {
+    rows.forEach(row => {
+      for (let i = 1; i <= 8; i++) {
+        createSeat(movie.id, `${row.name}${i}`, row.category, row.price);
+      }
+    });
+  });
+  console.log(`[server] Seeded 32 seats per movie room`);
 })();
 
-// ── Start ─────────────────────────────────────────────────────────────────────
 httpServer.listen(PORT, () => {
   console.log(`[server] Listening on http://localhost:${PORT}`);
-  console.log(`[socket] Socket.IO ready`);
 });
 
-// Export for testing
 module.exports = { app, httpServer, io };

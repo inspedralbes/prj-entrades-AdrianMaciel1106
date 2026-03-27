@@ -1,92 +1,175 @@
 <template>
   <div 
-    class="seat" 
-    :class="status.toLowerCase()"
-    @click="$emit('select', id)"
+    class="seat-wrapper"
+    :class="[status.toLowerCase(), category.toLowerCase()]"
+    @click="handleClick"
   >
-    <div class="seat-icon">💺</div>
-    <div class="seat-id">{{ id }}</div>
+    <div class="seat-body">
+      <div class="seat-handle left"></div>
+      <div class="seat-cushion">
+        <span class="seat-id">{{ id }}</span>
+      </div>
+      <div class="seat-handle right"></div>
+    </div>
     
-    <div v-if="status === 'RESERVED'" class="status-badge">Reservat</div>
-    <div v-if="status === 'SOLD'" class="status-badge">Venut</div>
+    <!-- Hover Info -->
+    <div class="seat-tooltip" v-if="status === 'AVAILABLE'">
+      <span class="cat">{{ category }}</span>
+      <span class="price">{{ price }}€</span>
+    </div>
+
+    <!-- Status Badge -->
+    <div v-if="status !== 'AVAILABLE'" class="status-indicator">
+      <div class="icon" v-if="status === 'RESERVED'">⏳</div>
+      <div class="icon" v-if="status === 'SOLD'">👤</div>
+    </div>
   </div>
 </template>
 
 <script setup>
-defineProps({
+const props = defineProps({
   id: String,
-  status: String, // AVAILABLE, RESERVED, SOLD
+  category: { type: String, default: 'STANDARD' }, // STANDARD, PREMIUM, VIP
+  price: { type: Number, default: 15 },
+  status: { type: String, default: 'AVAILABLE' }, // AVAILABLE, RESERVED, SOLD
   reservedBy: String,
   expiresAt: String
 })
 
-defineEmits(['select'])
+const emit = defineEmits(['select'])
+
+const handleClick = () => {
+  if (props.status === 'AVAILABLE') {
+    emit('select', props.id)
+  }
+}
 </script>
 
 <style scoped>
-.seat {
-  width: 80px;
-  height: 100px;
+.seat-wrapper {
+  position: relative;
+  width: 50px;
+  height: 50px;
+  cursor: pointer;
+  perspective: 1000px;
+  transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+}
+
+.seat-body {
+  width: 100%;
+  height: 100%;
+  display: flex;
+  align-items: flex-end;
+  justify-content: center;
+  position: relative;
+}
+
+.seat-cushion {
+  width: 36px;
+  height: 36px;
   background: white;
-  border: 1px solid #e5e7eb;
-  border-radius: 12px;
+  border-radius: 8px 8px 4px 4px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  box-shadow: 0 4px 0 rgba(0,0,0,0.1);
+  border: 2px solid transparent;
+  transition: all 0.2s;
+  z-index: 2;
+}
+
+.seat-handle {
+  width: 8px;
+  height: 24px;
+  background: #e5e7eb;
+  border-radius: 4px;
+  margin-bottom: 2px;
+}
+
+.seat-handle.left { margin-right: -4px; }
+.seat-handle.right { margin-left: -4px; }
+
+.seat-id {
+  font-size: 0.65rem;
+  font-weight: 800;
+  color: #6b7280;
+  opacity: 0.8;
+}
+
+/* Categories Colors */
+.standard .seat-cushion { background: #10b981; border-color: #059669; }
+.standard .seat-handle { background: #059669; }
+.standard .seat-id { color: white; }
+
+.premium .seat-cushion { background: #6366f1; border-color: #4f46e5; }
+.premium .seat-handle { background: #4f46e5; }
+.premium .seat-id { color: white; }
+
+.vip .seat-cushion { 
+  background: linear-gradient(135deg, #a855f7 0%, #7c3aed 100%); 
+  border-color: #6d28d9;
+  box-shadow: 0 4px 10px rgba(168, 85, 247, 0.4);
+}
+.vip .seat-handle { background: #6d28d9; }
+.vip .seat-id { color: white; }
+
+/* Status Styles */
+.reserved .seat-cushion { 
+  background: #f59e0b !important; 
+  border-color: #d97706 !important;
+  opacity: 0.8;
+}
+.reserved .seat-handle { background: #d97706 !important; }
+
+.sold .seat-cushion { 
+  background: #ef4444 !important; 
+  border-color: #dc2626 !important;
+  opacity: 0.4;
+  cursor: not-allowed;
+}
+.sold .seat-handle { background: #dc2626 !important; }
+
+/* Tooltip & Hover */
+.seat-tooltip {
+  position: absolute;
+  bottom: 120%;
+  left: 50%;
+  transform: translateX(-50%) translateY(10px);
+  background: #1f2937;
+  color: white;
+  padding: 6px 10px;
+  border-radius: 8px;
+  font-size: 0.7rem;
+  white-space: nowrap;
+  opacity: 0;
+  visibility: hidden;
+  transition: all 0.2s;
   display: flex;
   flex-direction: column;
   align-items: center;
-  justify-content: center;
-  cursor: pointer;
-  transition: all 0.2s cubic-bezier(0.4, 0, 0.2, 1);
-  position: relative;
-  box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1);
+  z-index: 10;
+  box-shadow: 0 10px 15px -3px rgba(0, 0, 0, 0.3);
 }
 
-.seat:hover {
-  transform: scale(1.05);
-  box-shadow: 0 10px 15px -3px rgba(0, 0, 0, 0.1);
-  border-color: #6366f1;
+.seat-tooltip .cat { font-weight: 800; text-transform: uppercase; font-size: 0.6rem; margin-bottom: 2px; }
+.seat-tooltip .price { color: #34d399; font-weight: 700; }
+
+.seat-wrapper:hover:not(.sold):not(.reserved) {
+  transform: translateY(-5px) scale(1.1);
 }
 
-.seat.available {
-  border-bottom: 4px solid #10b981;
+.seat-wrapper:hover .seat-tooltip {
+  opacity: 1;
+  visibility: visible;
+  transform: translateX(-50%) translateY(0);
 }
 
-.seat.reserved {
-  background: #fef3c7;
-  border-bottom: 4px solid #f59e0b;
-  cursor: not-allowed;
-}
-
-.seat.sold {
-  background: #fee2e2;
-  border-bottom: 4px solid #ef4444;
-  cursor: not-allowed;
-  opacity: 0.7;
-}
-
-.seat-icon {
-  font-size: 1.5rem;
-  margin-bottom: 4px;
-}
-
-.seat-id {
-  font-weight: 700;
-  font-size: 0.875rem;
-  color: #374151;
-}
-
-.status-badge {
+/* Status Indicator */
+.status-indicator {
   position: absolute;
-  top: -8px;
-  right: -8px;
-  background: #1f2937;
-  color: white;
-  font-size: 0.65rem;
-  padding: 2px 6px;
-  border-radius: 10px;
-  font-weight: 600;
-  text-transform: uppercase;
+  top: -5px;
+  right: -5px;
+  z-index: 5;
+  font-size: 0.8rem;
 }
-
-.seat.reserved .status-badge { background: #d97706; }
-.seat.sold .status-badge { background: #dc2626; }
 </style>

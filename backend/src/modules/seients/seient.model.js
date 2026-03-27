@@ -14,14 +14,17 @@ const SEAT_STATUS = {
   SOLD:      'SOLD',
 };
 
-// In-memory store  Map<id, Seat>
-const seats = new Map();
+// In-memory store  Map<eventId, Map<seatId, Seat>>
+const seatsByEvent = new Map();
 
 // ── Types ──────────────────────────────────────────────────────────────────
 
 /**
  * @typedef {Object} Seat
  * @property {string}      id          - Unique seat identifier (e.g. "A1")
+ * @property {string}      eventId     - ID of the event this seat belongs to
+ * @property {string}      category    - STANDARD | PREMIUM | VIP
+ * @property {number}      price       - Price of the seat
  * @property {string}      status      - AVAILABLE | RESERVED | SOLD
  * @property {string|null} reservedBy  - userId who holds the reservation
  * @property {Date|null}   expiresAt   - When the reservation expires (null when AVAILABLE/SOLD)
@@ -44,31 +47,50 @@ function serializeSeat(seat) {
 // ── CRUD ──────────────────────────────────────────────────────────────────
 
 /**
- * Create (or reset) a seat to AVAILABLE.
+ * Create (or reset) a seat to AVAILABLE for a specific event.
+ * @param {string} eventId
  * @param {string} id
+ * @param {string} category
+ * @param {number} price
  * @returns {Seat}
  */
-function createSeat(id) {
-  const seat = { id, status: SEAT_STATUS.AVAILABLE, reservedBy: null, expiresAt: null };
-  seats.set(id, seat);
+function createSeat(eventId, id, category = 'STANDARD', price = 15) {
+  if (!seatsByEvent.has(eventId)) {
+    seatsByEvent.set(eventId, new Map());
+  }
+  const eventSeats = seatsByEvent.get(eventId);
+  const seat = { 
+    id, 
+    eventId, 
+    category, 
+    price, 
+    status: SEAT_STATUS.AVAILABLE, 
+    reservedBy: null, 
+    expiresAt: null 
+  };
+  eventSeats.set(id, seat);
   return seat;
 }
 
 /**
- * Get a single seat by id.
+ * Get a single seat by eventId and seatId.
+ * @param {string} eventId
  * @param {string} id
  * @returns {Seat|undefined}
  */
-function getSeat(id) {
-  return seats.get(id);
+function getSeat(eventId, id) {
+  const eventSeats = seatsByEvent.get(eventId);
+  return eventSeats ? eventSeats.get(id) : undefined;
 }
 
 /**
- * Get all seats.
+ * Get all seats for a specific event.
+ * @param {string} eventId
  * @returns {Seat[]}
  */
-function getAllSeats() {
-  return Array.from(seats.values());
+function getAllSeats(eventId) {
+  const eventSeats = seatsByEvent.get(eventId);
+  return eventSeats ? Array.from(eventSeats.values()) : [];
 }
 
 // ── Business logic ────────────────────────────────────────────────────────
@@ -80,17 +102,22 @@ function getAllSeats() {
  * - Schedules a setTimeout that auto-releases the seat when ttlMs elapses
  *   and notifies all connected clients via `io` if provided.
  *
+ * @param {string} eventId
  * @param {string} id
  * @param {string} userId
  * @param {number} [ttlMs=180000]  - Reservation TTL (default 3 min)
  * @param {import('socket.io').Server|null} [io=null]
  * @returns {{ success: boolean, seat?: Seat, error?: string }}
  */
-function reserveSeat(id, userId, ttlMs = 3 * 60 * 1000, io = null) {
-  const seat = seats.get(id);
-  if (!seat) return { success: false, error: `Seat ${id} not found` };
+function reserveSeat(eventId, id, userId, ttlMs = 3 * 60 * 1000, io = null) {
+  const eventSeats = seatsByEvent.get(eventId);
+  if (!eventSeats) return { success: false, error: `Event ${eventId} not found` };
+
+  const seat = eventSeats.get(id);
+  if (!seat) return { success: false, error: `Seat ${id} not found in event ${eventId}` };
+  
   if (seat.status !== SEAT_STATUS.AVAILABLE) {
-    return { success: false, error: `Seat ${id} is not available (current status: ${seat.status})` };
+    return { success: false, error: `Seat ${id} is already ${seat.status}` };
   }
 
   seat.status     = SEAT_STATUS.RESERVED;
@@ -105,10 +132,11 @@ function reserveSeat(id, userId, ttlMs = 3 * 60 * 1000, io = null) {
       seat.reservedBy = null;
       seat.expiresAt  = null;
 
-      console.log(`[model] Seat ${id} reservation expired — released to AVAILABLE`);
+      console.log(`[model] Seat ${eventId}:${id} reservation expired — released to AVAILABLE`);
 
       if (io) {
-        io.emit('seat_updated', serializeSeat(seat));
+        // Broadcast to the event-specific room
+        io.to(eventId).emit('seat_updated', serializeSeat(seat));
       }
     }
   }, ttlMs);
@@ -121,16 +149,20 @@ function reserveSeat(id, userId, ttlMs = 3 * 60 * 1000, io = null) {
  * - Validates: seat exists, status is RESERVED, reservedBy matches, not expired.
  * - On success: status → SOLD, clears expiresAt.
  *
+ * @param {string} eventId
  * @param {string} id
  * @param {string} userId
  * @returns {{ success: boolean, seat?: Seat, error?: string }}
  */
-function confirmPurchase(id, userId) {
-  const seat = seats.get(id);
-  if (!seat) return { success: false, error: `Seat ${id} not found` };
+function confirmPurchase(eventId, id, userId) {
+  const eventSeats = seatsByEvent.get(eventId);
+  if (!eventSeats) return { success: false, error: `Event ${eventId} not found` };
+
+  const seat = eventSeats.get(id);
+  if (!seat) return { success: false, error: `Seat ${id} not found in event ${eventId}` };
 
   if (seat.status !== SEAT_STATUS.RESERVED) {
-    return { success: false, error: `Seat ${id} is not reserved (current status: ${seat.status})` };
+    return { success: false, error: `Seat ${id} is not reserved` };
   }
   if (seat.reservedBy !== userId) {
     return { success: false, error: `Seat ${id} is reserved by a different user` };
@@ -149,19 +181,21 @@ function confirmPurchase(id, userId) {
 }
 
 /**
- * Scan all seats and release any with an expired reservation.
+ * Scan all seats across all events and release any with an expired reservation.
  * Use this as a safety-net sweep (e.g. called every 60 s from the server).
  * @returns {Seat[]} seats that were released
  */
 function releaseExpiredReservations() {
   const now      = new Date();
   const released = [];
-  for (const seat of seats.values()) {
-    if (seat.status === SEAT_STATUS.RESERVED && seat.expiresAt && seat.expiresAt < now) {
-      seat.status     = SEAT_STATUS.AVAILABLE;
-      seat.reservedBy = null;
-      seat.expiresAt  = null;
-      released.push(seat);
+  for (const eventSeats of seatsByEvent.values()) {
+    for (const seat of eventSeats.values()) {
+      if (seat.status === SEAT_STATUS.RESERVED && seat.expiresAt && seat.expiresAt < now) {
+        seat.status     = SEAT_STATUS.AVAILABLE;
+        seat.reservedBy = null;
+        seat.expiresAt  = null;
+        released.push(seat);
+      }
     }
   }
   return released;

@@ -1,18 +1,5 @@
 /**
  * seat.socket.js
- * ──────────────
- * Registers Socket.IO event handlers for each connected client.
- *
- * Events received from clients:
- *   reserve_seat     { seatId, userId }
- *   confirm_purchase { seatId, userId }
- *   get_all_seats    (no payload)
- *
- * Events emitted to clients:
- *   reserve_seat_response     { success, seat?, error? }   → only to sender
- *   confirm_purchase_response { success, seat?, error? }   → only to sender
- *   all_seats                 { seats[] }                  → only to sender
- *   seat_updated              { seat }                     → ALL clients (broadcast)
  */
 
 const {
@@ -22,75 +9,56 @@ const {
   serializeSeat,
 } = require('./seient.model');
 
-const TTL_MS = 3 * 60 * 1000; // 3 minutes
+const TTL_MS = 3 * 60 * 1000;
 
-/**
- * Register all seat events for one socket connection.
- * @param {import('socket.io').Socket} socket
- * @param {import('socket.io').Server} io
- */
 function registerSeatEvents(socket, io) {
+  // join_event
+  socket.on('join_event', ({ eventId }) => {
+    if (!eventId) return;
+    socket.join(eventId);
+    console.log(`[socket] Client ${socket.id} joined room for event ${eventId}`);
+    
+    const allSeats = getAllSeats(eventId);
+    socket.emit('all_seats', { seats: allSeats.map(serializeSeat) });
+  });
 
-  // ── reserve_seat ──────────────────────────────────────────────────────────
-  socket.on('reserve_seat', ({ seatId, userId } = {}) => {
-    if (!seatId || !userId) {
-      return socket.emit('reserve_seat_response', {
-        success: false,
-        error: 'seatId and userId are required',
-      });
-    }
+  // reserve_seat
+  socket.on('reserve_seat', ({ eventId, seatId, userId } = {}) => {
+    if (!eventId || !seatId || !userId) return;
 
-    // Pass io so the model can broadcast when the reservation auto-expires
-    const result = reserveSeat(seatId, userId, TTL_MS, io);
-
-    // Respond to the requesting client
+    const result = reserveSeat(eventId, seatId, userId, TTL_MS, io);
     socket.emit('reserve_seat_response', {
       success: result.success,
-      seat:    result.seat  ? serializeSeat(result.seat) : undefined,
+      seat:    result.seat ? serializeSeat(result.seat) : undefined,
       error:   result.error,
     });
 
-    // Broadcast new state to ALL clients immediately
     if (result.success) {
-      io.emit('seat_updated', serializeSeat(result.seat));
-      console.log(`[socket] reserve_seat   → ${seatId} by ${userId} (expires ${result.seat.expiresAt.toISOString()})`);
-    } else {
-      console.log(`[socket] reserve_seat   ✗ ${seatId}: ${result.error}`);
+      io.to(eventId).emit('seat_updated', serializeSeat(result.seat));
     }
   });
 
-  // ── confirm_purchase ──────────────────────────────────────────────────────
-  socket.on('confirm_purchase', ({ seatId, userId } = {}) => {
-    if (!seatId || !userId) {
-      return socket.emit('confirm_purchase_response', {
-        success: false,
-        error: 'seatId and userId are required',
-      });
-    }
+  // confirm_purchase
+  socket.on('confirm_purchase', ({ eventId, seatId, userId } = {}) => {
+    if (!eventId || !seatId || !userId) return;
 
-    const result = confirmPurchase(seatId, userId);
-
-    // Respond to the requesting client
+    const result = confirmPurchase(eventId, seatId, userId);
     socket.emit('confirm_purchase_response', {
       success: result.success,
-      seat:    result.seat  ? serializeSeat(result.seat) : undefined,
+      seat:    result.seat ? serializeSeat(result.seat) : undefined,
       error:   result.error,
     });
 
-    // Broadcast new state to ALL clients
     if (result.success) {
-      io.emit('seat_updated', serializeSeat(result.seat));
-      console.log(`[socket] confirm_purchase → ${seatId} SOLD to ${userId}`);
-    } else {
-      console.log(`[socket] confirm_purchase ✗ ${seatId}: ${result.error}`);
+      io.to(eventId).emit('seat_updated', serializeSeat(result.seat));
     }
   });
 
-  // ── get_all_seats ─────────────────────────────────────────────────────────
-  socket.on('get_all_seats', () => {
-    const allSeats = getAllSeats().map(serializeSeat);
+  // get_all_seats
+  socket.on('get_all_seats', ({ eventId } = {}) => {
+    if (!eventId) return;
+    const allSeats = getAllSeats(eventId).map(serializeSeat);
     socket.emit('all_seats', { seats: allSeats });
-    console.log(`[socket] get_all_seats → sent ${allSeats.length} seats to ${socket.id}`);
   });
 }
 
