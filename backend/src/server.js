@@ -4,18 +4,22 @@
  * Entry point: Express + Socket.IO on port 3001.
  */
 
-require('dotenv').config();
+import dotenv from 'dotenv';
+dotenv.config(); // Carga .env de la carpeta backend/
+import http from 'http';
+import express from 'express';
+import cors from 'cors';
+import { Server } from 'socket.io';
 
-const http    = require('http');
-const express = require('express');
-const cors    = require('cors');
-const { Server } = require('socket.io');
-
-const { registerSeatEvents }               = require('./modules/seients/seient.socket');
-const { createSeat, getAllSeats,
-        releaseExpiredReservations,
-        serializeSeat }                     = require('./modules/seients/seient.model');
-const { createEvent, getAllEvents }         = require('./modules/events/event.model');
+import { registerSeatEvents } from './modules/seients/seient.socket.js';
+import { 
+  createSeat, 
+  getAllSeats, 
+  releaseExpiredReservations, 
+  serializeSeat 
+} from './modules/seients/seient.model.js';
+import { createEvent, getAllEvents } from './modules/events/event.model.js';
+import { getNowPlayingMovies } from './modules/movies/movie.service.js';
 
 const PORT          = Number(process.env.PORT) || 3001;
 const DEFAULT_SEATS = 20;
@@ -37,6 +41,39 @@ app.get('/api/events/:eventId/seats', (req, res) => {
 
 app.get('/api/events', (_req, res) => {
   res.json({ events: getAllEvents() });
+});
+
+/**
+ * POST /api/events
+ * Crea un nuevo evento manual como administrador y genera sus 32 asientos por defecto.
+ */
+app.post('/api/events', (req, res) => {
+  const { nom, data, lloc, imatge, backdrop, sinopsi, rating } = req.body;
+  if (!nom || !data) {
+    return res.status(400).json({ error: 'Noms i data son requerits' });
+  }
+
+  // Generar ID simple único
+  const newId = `evt_${Date.now()}`;
+  
+  // Guardar evento
+  const newEvent = createEvent(newId, nom, data, lloc || 'Sala Principal', imatge || '/images/default.png', backdrop || '', sinopsi || '', rating || 0);
+
+  // Auto-generar 32 asientos
+  const rows = [
+    { name: 'A', category: 'STANDARD', price: 9.50 },
+    { name: 'B', category: 'STANDARD', price: 9.50 },
+    { name: 'C', category: 'PREMIUM',  price: 12.00 },
+    { name: 'D', category: 'VIP',      price: 18.00 }
+  ];
+
+  rows.forEach(row => {
+    for (let i = 1; i <= 8; i++) {
+      createSeat(newId, `${row.name}${i}`, row.category, row.price);
+    }
+  });
+
+  return res.status(201).json({ success: true, event: newEvent });
 });
 
 /**
@@ -86,8 +123,6 @@ setInterval(() => {
   });
 }, 30000);
 
-const { getNowPlayingMovies }               = require('./modules/movies/movie.service');
-
 
 
 // ── Seed default data on startup ──────────────────────────────────────────────
@@ -131,4 +166,4 @@ httpServer.listen(PORT, () => {
   console.log(`[server] Listening on http://localhost:${PORT}`);
 });
 
-module.exports = { app, httpServer, io };
+export { app, httpServer, io };

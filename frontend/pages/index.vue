@@ -1,7 +1,7 @@
 <template>
   <div class="page-wrapper">
     <header class="main-header">
-      <div class="logo">TicketRealTime 🎟️</div>
+      <div class="logo">FlowPass 🎟️</div>
     </header>
 
     <main>

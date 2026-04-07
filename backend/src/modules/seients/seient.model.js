@@ -203,7 +203,7 @@ function releaseExpiredReservations() {
 
 // ── Exports ───────────────────────────────────────────────────────────────
 
-module.exports = {
+export {
   SEAT_STATUS,
   serializeSeat,
   createSeat,

@@ -36,7 +36,7 @@ function getAllEvents() {
   return Array.from(events.values());
 }
 
-module.exports = {
+export {
   createEvent,
   getAllEvents,
 };

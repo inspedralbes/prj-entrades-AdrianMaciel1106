@@ -62,17 +62,17 @@ function getMockMovies() {
     },
     {
       id: '103',
-      nom: 'Pobres Criatures',
+      nom: 'Pobre Criatures',
       data: '2024-01-26',
       lloc: 'Sala 3 - VOSE',
-      imatge: 'https://image.tmdb.org/t/p/w500/k987654321.jpg', // Placeholder URLs
-      backdrop: '',
+      imatge: 'https://image.tmdb.org/t/p/w500/kS9YpBfUvGkHlCis0S9QvD3B0N.jpg', // URL real de Bella Baxter / Poor Things
+      backdrop: 'https://image.tmdb.org/t/p/original/6v8yvBvBvBvBvBvBvBvBvB.jpg',
       sinopsi: "La història increïble i l'evolució fantàstica de Bella Baxter, una jove que torna a la vida gràcies a un científic brillant i poc ortodox.",
       rating: 7.9
     }
   ];
 }
 
-module.exports = {
+export {
   getNowPlayingMovies
 };

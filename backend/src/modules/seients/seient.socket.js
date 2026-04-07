@@ -2,12 +2,12 @@
  * seat.socket.js
  */
 
-const {
+import {
   reserveSeat,
   confirmPurchase,
   getAllSeats,
   serializeSeat,
-} = require('./seient.model');
+} from './seient.model.js';
 
 const TTL_MS = 3 * 60 * 1000;
 
@@ -62,4 +62,4 @@ function registerSeatEvents(socket, io) {
   });
 }
 
-module.exports = { registerSeatEvents };
+export { registerSeatEvents };

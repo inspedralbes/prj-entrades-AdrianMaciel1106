@@ -1,10 +1,10 @@
-# Plataforma de Venda d'Entrades en Temps Real
+# FlowPass - Plataforma de Venda d'Entrades en Temps Real
 
 ## Integrants
 - Adrian Maciel
 
 ## Nom del projecte
-Plataforma de Venda d'Entrades per a un Esdeveniment d'Alta Demanda (Temps Real)
+FlowPass: Plataforma de Venda d'Entrades per a un Esdeveniment d'Alta Demanda (Temps Real)
 
 ## Descripció
 Aplicació web per reservar entrades en temps real amb Socket.IO. Sistema de bloqueig temporal de seients, gestió de concurrència i panell d'administració amb dades en temps real.

@@ -22,7 +22,7 @@
             <span class="pulse"></span>
             Tenim reservat el seient <strong>{{ reservedSeat.id }}</strong> ({{ reservedSeat.price }}€)
           </div>
-          <button class="btn-purchase" @click="confirmPurchase(reservedSeat.id)">Finalitzar Compra</button>
+          <button class="btn-purchase" @click="goToCheckout">Finalitzar Compra</button>
         </div>
         <div v-else class="legend">
           <div class="legend-item"><span class="dot available"></span> Lliure</div>
@@ -109,6 +109,7 @@
 </template>
 
 <script setup>
+const router = useRouter()
 const route = useRoute()
 const { $socket } = useNuxtApp()
 
@@ -128,7 +129,7 @@ onMounted(async () => {
     const data = await res.json()
     seats.value = data.seats
     
-    // Fetch event metadata (simulated since we don't have a specific getEvent by ID endpoint yet)
+    // Fetch event metadata
     const eventsRes = await fetch('http://localhost:3001/api/events')
     const eventsData = await eventsRes.json()
     event.value = eventsData.events.find(e => e.id === route.params.id)
@@ -188,11 +189,17 @@ const processReservation = () => {
   selectedSeat.value = null
 }
 
-const confirmPurchase = (seatId) => {
-  $socket.emit('confirm_purchase', { 
-    eventId: route.params.id, 
-    seatId, 
-    userId: userId.value 
+const goToCheckout = () => {
+  if (!reservedSeat.value) return
+  
+  router.push({
+    path: '/event/checkout',
+    query: {
+      eventId: route.params.id,
+      seatId: reservedSeat.value.id,
+      price: reservedSeat.value.price,
+      category: reservedSeat.value.category
+    }
   })
 }
 
