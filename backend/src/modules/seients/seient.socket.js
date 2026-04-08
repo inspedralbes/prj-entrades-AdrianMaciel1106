@@ -24,9 +24,11 @@ function registerSeatEvents(socket, io) {
 
   // reserve_seat
   socket.on('reserve_seat', ({ eventId, seatId, userId } = {}) => {
+    console.log(`[socket] Reserve attempt: ${eventId}:${seatId} by ${userId}`);
     if (!eventId || !seatId || !userId) return;
 
     const result = reserveSeat(eventId, seatId, userId, TTL_MS, io);
+    console.log(`[socket] Reserve result for ${seatId}: success=${result.success}, error=${result.error}`);
     socket.emit('reserve_seat_response', {
       success: result.success,
       seat:    result.seat ? serializeSeat(result.seat) : undefined,

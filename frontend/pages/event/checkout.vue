@@ -7,15 +7,22 @@
       </header>
 
       <div class="checkout-content">
+        <!-- Feedback Overlay -->
+        <Transition name="fade">
+          <div v-if="eventStore.lastNotification" class="notification-toast" :class="eventStore.lastNotification.type">
+            {{ eventStore.lastNotification.message }}
+          </div>
+        </Transition>
+
         <!-- Resum de la reserva -->
         <section class="summary-section">
           <div class="card">
-            <div class="movie-mini-info" v-if="event">
-              <img :src="event.imatge" :alt="event.nom" class="mini-poster">
+            <div class="movie-mini-info" v-if="eventStore.eventInfo">
+              <img :src="eventStore.eventInfo.imatge" :alt="eventStore.eventInfo.nom" class="mini-poster">
               <div class="text">
-                <h3>{{ event.nom }}</h3>
-                <p>{{ event.lloc }}</p>
-                <p class="date">{{ event.data }}</p>
+                <h3>{{ eventStore.eventInfo.nom }}</h3>
+                <p>{{ eventStore.eventInfo.lloc }}</p>
+                <p class="date">{{ eventStore.eventInfo.data }}</p>
               </div>
             </div>
             
@@ -73,17 +80,18 @@
 </template>
 
 <script setup>
+import { useEventStore } from '@/stores/useEventStores'
+
 const route = useRoute()
 const router = useRouter()
-const { $socket } = useNuxtApp()
+const eventStore = useEventStore()
 
-// Query params
-const eventId = route.query.eventId
+// Query params (fallback si no hi ha estat al store)
+const eventId = route.query.eventId || eventStore.eventInfo?.id
 const seatId = route.query.seatId
 const price = route.query.price
 const category = route.query.category || 'STANDARD'
 
-const event = ref(null)
 const isProcessing = ref(false)
 const form = ref({
   name: '',
@@ -96,41 +104,66 @@ onMounted(async () => {
     return
   }
 
-  // Fetch event details
-  try {
-    const res = await fetch('http://localhost:3001/api/events')
-    const data = await res.json()
-    event.value = data.events.find(e => e.id === eventId)
-  } catch (err) {
-    console.error('Error carregant esdeveniment', err)
+  // Si el store no té la info de l'esdeveniment, la busquem
+  if (!eventStore.eventInfo) {
+    try {
+      const res = await fetch('http://localhost:3001/api/events')
+      const data = await res.json()
+      const eventData = data.events.find(e => e.id === eventId)
+      if (eventData) eventStore.setEventInfo(eventData)
+    } catch (err) {
+      console.error('Error carregant esdeveniment', err)
+    }
+  }
+  
+  // Ens assegurem que el socket estigui connectat
+  if (!eventStore.isConnected) {
+    eventStore.initSocket(eventId)
   }
 })
 
 const handlePayment = async () => {
+  if (!form.value.name || !form.value.email) return
+  
   isProcessing.value = true
   
-  // Simulem un retard de xarxa
-  setTimeout(() => {
-    // Emetem la confirmació real al backend via Socket o REST
-    // En aquest projecte es fa per Socket segons hem vist a [id].vue
-    $socket.emit('confirm_purchase', { 
-      eventId, 
-      seatId, 
-      userId: `user_${form.value.name.replace(/\s+/g, '_').toLowerCase()}`
-    })
+  // Escoltarem la resposta del socket una sola vegada
+  const { $socket } = useNuxtApp()
+  
+  const handleResponse = (res) => {
+    isProcessing.value = false
+    $socket.off('confirm_purchase_response', handleResponse)
+    
+    if (res.success) {
+      // Naveguem a la pàgina final amb les dades
+      router.push({
+        path: '/event/entrades',
+        query: {
+          eventId,
+          seatId,
+          name: form.value.name,
+          movieNom: eventStore.eventInfo.nom,
+          imatge: eventStore.eventInfo.imatge
+        }
+      })
+    } else {
+      eventStore.showNotification(res.error || 'La compra ha fallat. És possible que la reserva hagi expirat.', 'error')
+    }
+  }
 
-    // Naveguem a la pàgina final amb les dades
-    router.push({
-      path: '/event/entrades',
-      query: {
-        eventId,
-        seatId,
-        name: form.value.name,
-        movieNom: event.value.nom,
-        imatge: event.value.imatge
-      }
-    })
-  }, 1500)
+  $socket.on('confirm_purchase_response', handleResponse)
+
+  // Cridem a l'acció del store
+  eventStore.confirmPurchase(seatId)
+  
+  // Timeout de seguretat per si el socket no respon
+  setTimeout(() => {
+    if (isProcessing.value) {
+      isProcessing.value = false
+      $socket.off('confirm_purchase_response', handleResponse)
+      eventStore.showNotification('El servidor triga massa a respondre.', 'error')
+    }
+  }, 10000)
 }
 </script>
 
@@ -345,6 +378,36 @@ const handlePayment = async () => {
 .btn-pay:disabled {
   opacity: 0.7;
   cursor: not-allowed;
+}
+
+.shadow-premium {
+  box-shadow: 0 10px 30px rgba(0, 0, 0, 0.08);
+  border: 1px solid rgba(255, 255, 255, 0.6);
+}
+
+.notification-toast {
+  position: absolute;
+  top: 20px;
+  right: 20px;
+  padding: 16px 24px;
+  border-radius: 12px;
+  color: white;
+  font-weight: 600;
+  z-index: 1000;
+  box-shadow: 0 10px 15px -3px rgba(0, 0, 0, 0.1);
+  max-width: 300px;
+}
+
+.notification-toast.success { background: #10b981; }
+.notification-toast.error { background: #ef4444; }
+.notification-toast.info { background: #3b82f6; }
+
+.fade-enter-active, .fade-leave-active {
+  transition: all 0.4s cubic-bezier(0.16, 1, 0.3, 1);
+}
+.fade-enter-from, .fade-leave-to {
+  opacity: 0;
+  transform: translateY(-20px) scale(0.9);
 }
 
 .loader {

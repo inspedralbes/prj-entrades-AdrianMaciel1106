@@ -19,9 +19,10 @@
     </div>
 
     <!-- Status Badge -->
-    <div v-if="status !== 'AVAILABLE'" class="status-indicator">
-      <div class="icon" v-if="status === 'RESERVED'">⏳</div>
-      <div class="icon" v-if="status === 'SOLD'">👤</div>
+    <div v-if="status !== 'AVAILABLE' && status !== 'available'" class="status-indicator">
+      <div class="icon" v-if="status.toUpperCase() === 'RESERVED'">🔒</div>
+      <div class="icon" v-if="status.toUpperCase() === 'SELECTED'">⭐</div>
+      <div class="icon" v-if="status.toUpperCase() === 'SOLD'">👤</div>
     </div>
   </div>
 </template>
@@ -31,7 +32,7 @@ const props = defineProps({
   id: String,
   category: { type: String, default: 'STANDARD' }, // STANDARD, PREMIUM, VIP
   price: { type: Number, default: 15 },
-  status: { type: String, default: 'AVAILABLE' }, // AVAILABLE, RESERVED, SOLD
+  status: { type: String, default: 'available' }, // available, reserved, selected, sold
   reservedBy: String,
   expiresAt: String
 })
@@ -39,7 +40,7 @@ const props = defineProps({
 const emit = defineEmits(['select'])
 
 const handleClick = () => {
-  if (props.status === 'AVAILABLE') {
+  if (props.status.toLowerCase() === 'available') {
     emit('select', props.id)
   }
 }
@@ -114,12 +115,20 @@ const handleClick = () => {
 .vip .seat-id { color: white; }
 
 /* Status Styles */
-.reserved .seat-cushion { 
-  background: #f59e0b !important; 
+.selected .seat-cushion { 
+  background: #fbbf24 !important; 
   border-color: #d97706 !important;
+  box-shadow: 0 0 15px rgba(251, 191, 36, 0.6);
+  z-index: 10;
+}
+.selected .seat-handle { background: #d97706 !important; }
+
+.reserved .seat-cushion { 
+  background: #9ca3af !important; 
+  border-color: #4b5563 !important;
   opacity: 0.8;
 }
-.reserved .seat-handle { background: #d97706 !important; }
+.reserved .seat-handle { background: #4b5563 !important; }
 
 .sold .seat-cushion { 
   background: #ef4444 !important; 

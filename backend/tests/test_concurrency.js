@@ -18,10 +18,10 @@
  *   npm install socket.io-client
  */
 
-const { io: ioc } = require('socket.io-client');
+import { io as ioc } from 'socket.io-client';
 
-const SERVER_URL = 'http://localhost:3000';
-const EVENT_ID   = '1';
+const SERVER_URL = 'http://localhost:3001';
+const EVENT_ID   = '101';
 const SEAT_ID    = 'A1';
 const TTL_MS     = 3 * 60 * 1000; // must match server TTL
 

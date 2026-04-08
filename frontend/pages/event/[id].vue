@@ -21,6 +21,7 @@
           <div class="info">
             <span class="pulse"></span>
             Tenim reservat el seient <strong>{{ reservedSeat.id }}</strong> ({{ reservedSeat.price }}€)
+            <span class="timer-badge" v-if="eventStore.timer > 0">{{ formattedTimer }}</span>
           </div>
           <button class="btn-purchase" @click="goToCheckout">Finalitzar Compra</button>
         </div>
@@ -64,8 +65,8 @@
 
     <!-- Feedback Overlay -->
     <Transition name="fade">
-      <div v-if="notification" class="notification" :class="notification.type">
-        {{ notification.message }}
+      <div v-if="eventStore.lastNotification" class="notification" :class="eventStore.lastNotification.type">
+        {{ eventStore.lastNotification.message }}
       </div>
     </Transition>
 
@@ -81,7 +82,7 @@
             <span class="label">Preu:</span>
             <span class="value">{{ selectedSeat.price }}€</span>
           </div>
-          <p class="timer-info">Tens 3 minuts per confirmar la compra després de reservar.</p>
+          <p class="timer-info">Tens {{ eventStore.timer }} segons per confirmar la compra després de reservar.</p>
           <div class="modal-actions">
             <button class="btn secondary" @click="selectedSeat = null">Cancel·lar</button>
             <button class="btn primary" @click="processReservation">Reservar Ara</button>
@@ -111,82 +112,56 @@
 <script setup>
 const router = useRouter()
 const route = useRoute()
-const { $socket } = useNuxtApp()
+const eventStore = useEventStore()
 
-const event = ref(null)
-const seats = ref([])
-const selectedSeat = ref(null)
-const reservedSeat = ref(null)
-const purchasedSeat = ref(null)
-const notification = ref(null)
-const userId = ref(`user_${Math.floor(Math.random() * 1000)}`)
+// Computed per facilitar l'accés
+const event = computed(() => eventStore.eventInfo)
+const seats = computed(() => eventStore.seats)
+const reservedSeat = computed(() => eventStore.selectedSeats[0]) // Agafem el primer com a exemple d'UI
 
-// 1. Fetch event data
+const selectedSeatInternal = ref(null) // Seient clicat però no reservat encara (modal)
+
 onMounted(async () => {
   const eventId = route.params.id
+  
   try {
+    // 1. Carregar dades inicials
     const res = await fetch(`http://localhost:3001/api/events/${eventId}/seats`)
     const data = await res.json()
-    seats.value = data.seats
     
-    // Fetch event metadata
+    // 2. Carregar metadata de l'esdeveniment
     const eventsRes = await fetch('http://localhost:3001/api/events')
     const eventsData = await eventsRes.json()
-    event.value = eventsData.events.find(e => e.id === route.params.id)
-
-    // 2. Setup Sockets
-    $socket.connect()
+    const currentEvent = eventsData.events.find((e) => e.id === eventId)
     
-    // Join event-specific room
-    $socket.emit('join_event', { eventId })
+    if (currentEvent) {
+      eventStore.setEventInfo(currentEvent)
+    }
     
-    $socket.on('seat_updated', (updatedSeat) => {
-      const index = seats.value.findIndex(s => s.id === updatedSeat.id)
-      if (index !== -1) seats.value[index] = updatedSeat
-    })
-
-    $socket.on('reserve_seat_response', (res) => {
-      if (res.success) {
-        showNotification(`Seient ${res.seat.id} reservat! Tens 3 minuts per confirmar.`, 'success')
-        reservedSeat.value = res.seat
-      } else {
-        showNotification(res.error, 'error')
-      }
-    })
-
-    $socket.on('confirm_purchase_response', (res) => {
-      if (res.success) {
-        showNotification(`Compra confirmada per al seient ${res.seat.id}!`, 'success')
-        purchasedSeat.value = res.seat
-        reservedSeat.value = null
-      } else {
-        showNotification(res.error, 'error')
-      }
-    })
+    // 3. Inicialitzar Sockets a través del Store
+    eventStore.initSocket(eventId)
 
   } catch (err) {
-    showNotification('Error connectant amb el servidor', 'error')
+    eventStore.showNotification('Error connectant amb el servidor', 'error')
   }
 })
 
 onUnmounted(() => {
-  $socket.disconnect()
+  eventStore.resetStore()
 })
 
 const handleSelectSeat = (id) => {
   const seat = seats.value.find(s => s.id === id)
-  if (seat.status === 'AVAILABLE') {
-    selectedSeat.value = seat
+  if (seat && seat.status === 'available') {
+    selectedSeatInternal.value = seat
   }
 }
 
 const processReservation = () => {
-  $socket.emit('reserve_seat', { 
-    eventId: route.params.id, 
-    seatId: selectedSeat.value.id, 
-    userId: userId.value 
-  })
-  selectedSeat.value = null
+  if (selectedSeatInternal.value) {
+    eventStore.reserveSeat(selectedSeatInternal.value.id)
+    selectedSeatInternal.value = null
+  }
 }
 
 const goToCheckout = () => {
@@ -203,10 +178,12 @@ const goToCheckout = () => {
   })
 }
 
-const showNotification = (message, type) => {
-  notification.value = { message, type }
-  setTimeout(() => notification.value = null, 4000)
-}
+// Formatejar el temps del temporitzador (mm:ss)
+const formattedTimer = computed(() => {
+  const minutes = Math.floor(eventStore.timer / 60)
+  const seconds = eventStore.timer % 60
+  return `${minutes}:${seconds.toString().padStart(2, '0')}`
+})
 </script>
 
 <style scoped>
@@ -410,6 +387,7 @@ const showNotification = (message, type) => {
 
 .notification.success { background: #10b981; }
 .notification.error { background: #ef4444; }
+.notification.info { background: #3b82f6; }
 
 /* Modals */
 .modal-overlay {
@@ -520,9 +498,19 @@ const showNotification = (message, type) => {
 .purchase-info-bar .info {
   display: flex;
   align-items: center;
-  gap: 10px;
+  gap: 15px;
   font-size: 0.9rem;
   color: #92400e;
+}
+
+.timer-badge {
+  background: #f59e0b;
+  color: white;
+  padding: 2px 8px;
+  border-radius: 6px;
+  font-family: monospace;
+  font-weight: 800;
+  box-shadow: 0 2px 4px rgba(0,0,0,0.1);
 }
 
 .pulse {
