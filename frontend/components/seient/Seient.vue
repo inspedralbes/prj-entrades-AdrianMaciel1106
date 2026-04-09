@@ -21,9 +21,15 @@
 
     <!-- Status Icons -->
     <div class="status-icon" v-if="status.toUpperCase() !== 'AVAILABLE'">
-      <span v-if="status.toUpperCase() === 'RESERVED'">🔒</span>
-      <span v-if="status.toUpperCase() === 'SELECTED'">🤩</span>
-      <span v-if="status.toUpperCase() === 'SOLD'">👤</span>
+      <span v-if="status.toUpperCase() === 'RESERVED'" title="Bloquejat">
+        <svg style="width:14px;height:14px;" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 15v2m-6 4h12a2 2 0 002-2v-6a2 2 0 00-2-2H6a2 2 0 00-2 2v6a2 2 0 002 2zm10-10V7a4 4 0 00-8 0v4h8z"></path></svg>
+      </span>
+      <span v-if="status.toUpperCase() === 'SELECTED'">
+        <svg style="width:14px;height:14px;color:white;" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7"></path></svg>
+      </span>
+      <span v-if="status.toUpperCase() === 'SOLD'">
+        <svg style="width:14px;height:14px;" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M16 7a4 4 0 11-8 0 4 4 0 018 0zM12 14a7 7 0 00-7 7h14a7 7 0 00-7-7z"></path></svg>
+      </span>
     </div>
   </div>
 </template>
@@ -170,6 +176,7 @@ const handleClick = () => {
 
 .seat-wrapper:hover:not(.sold):not(.reserved) {
   transform: scale(1.15) translateY(-5px);
+  z-index: 1000;
 }
 
 .seat-wrapper:hover .seat-tooltip {
@@ -184,5 +191,11 @@ const handleClick = () => {
   right: -8px;
   font-size: 0.9rem;
   z-index: 10;
+  background: rgba(15,23,42,0.8);
+  border-radius: 50%;
+  padding: 4px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
 }
 </style>

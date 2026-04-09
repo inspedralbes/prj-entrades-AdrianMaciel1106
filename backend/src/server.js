@@ -11,9 +11,10 @@ import {
   getAllSeats, 
   releaseExpiredReservations, 
   serializeSeat,
-  confirmPurchase 
+  confirmPurchase,
+  deleteSeats
 } from './modules/seients/seient.model.js';
-import { createEvent, getAllEvents } from './modules/events/event.model.js';
+import { createEvent, getAllEvents, deleteEvent } from './modules/events/event.model.js';
 import { getNowPlayingMovies } from './modules/movies/movie.service.js';
 import { saveToDisk, loadFromDisk } from './utils/storage.js';
 
@@ -66,6 +67,22 @@ app.post('/api/events', async (req, res) => {
 
   await persistData();
   return res.status(201).json({ success: true, event: newEvent });
+});
+
+/**
+ * DELETE /api/events/:eventId
+ * Elimina un evento existente.
+ */
+app.delete('/api/events/:eventId', async (req, res) => {
+  const { eventId } = req.params;
+  deleteEvent(eventId);
+  deleteSeats(eventId);
+  await persistData();
+  
+  // Avisar por web sockets de que se ha borrado el evento (opcional, todos los del home)
+  io.emit('event_deleted', { eventId });
+  
+  return res.json({ success: true });
 });
 
 /**

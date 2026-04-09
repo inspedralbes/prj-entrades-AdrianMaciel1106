@@ -26,7 +26,10 @@
         <div class="stat-card highlight">
           <span class="stat-label">Ingressos estimats</span>
           <span class="stat-value">{{ globalStats.income }}€</span>
-          <div class="stat-trend success">📈 +12%</div>
+          <div class="stat-trend success">
+            <svg style="width:14px;height:14px;display:inline-block;vertical-align:middle;margin-right:4px;" fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13 7h8m0 0v8m0-8l-8 8-4-4-6 6"></path></svg>
+            +12%
+          </div>
         </div>
         <div class="stat-card">
           <span class="stat-label">Usuaris en línia</span>
@@ -52,8 +55,16 @@
                   <input type="date" v-model="form.data" required />
                 </div>
                 <div class="form-group">
-                  <label>Sala</label>
-                  <input type="text" v-model="form.lloc" placeholder="Sala IMAX" />
+                  <label>Sala / Cinema de BCN</label>
+                  <select v-model="form.lloc" required>
+                    <option value="Yelmo Cines Icaria (VOS)">Yelmo Cines Icaria (VOS)</option>
+                    <option value="Phenomena Experience">Phenomena Experience</option>
+                    <option value="Cinesa Diagonal Mar">Cinesa Diagonal Mar</option>
+                    <option value="Cinemes Texas">Cinemes Texas</option>
+                    <option value="Balmes Multicines">Balmes Multicines</option>
+                    <option value="Cines Verdi">Cines Verdi</option>
+                    <option value="Cinema Pedralbes">Cinema Pedralbes</option>
+                  </select>
                 </div>
               </div>
 
@@ -95,6 +106,9 @@
                   <span class="val">{{ Math.floor(Math.random() * 32) }}/32</span>
                   <span class="lbl">Seients</span>
                 </div>
+                <button @click="deleteEventItem(e.id)" class="btn-delete" title="Eliminar">
+                  <svg fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16"></path></svg>
+                </button>
               </div>
             </div>
           </div>
@@ -153,6 +167,20 @@ const createEvent = async () => {
     errorMsg.value = err.message
   } finally {
     isSubmitting.value = false
+  }
+}
+
+const deleteEventItem = async (id) => {
+  if (!confirm('Segur que vols eliminar aquest esdeveniment?')) return
+  
+  try {
+    const res = await fetch(`http://localhost:3001/api/events/${id}`, {
+      method: 'DELETE'
+    })
+    if (!res.ok) throw new Error('Error eliminant dades')
+    refresh()
+  } catch (err) {
+    alert(err.message)
   }
 }
 </script>
@@ -256,7 +284,7 @@ const createEvent = async () => {
 .form-row { display: grid; grid-template-columns: 1fr 1fr; gap: 20px; }
 
 .form-group label { display: block; font-size: 0.85rem; font-weight: 700; color: #64748b; margin-bottom: 8px; text-transform: uppercase; }
-.form-group input, .form-group textarea {
+.form-group input, .form-group textarea, .form-group select {
   width: 100%;
   background: #0f172a;
   border: 1px solid #334155;
@@ -267,7 +295,7 @@ const createEvent = async () => {
   font-size: 1rem;
 }
 
-.form-group input:focus { border-color: var(--primary); outline: none; box-shadow: 0 0 0 4px rgba(99, 102, 241, 0.1); }
+.form-group input:focus, .form-group select:focus { border-color: var(--primary); outline: none; box-shadow: 0 0 0 4px rgba(99, 102, 241, 0.1); }
 
 .submit-btn {
   background: var(--primary);
@@ -302,6 +330,26 @@ const createEvent = async () => {
 .item-stat { text-align: right; min-width: 80px; }
 .item-stat .val { display: block; font-size: 1.2rem; font-weight: 800; }
 .item-stat .lbl { font-size: 0.7rem; color: #64748b; font-weight: 700; text-transform: uppercase; }
+
+.btn-delete {
+  background: rgba(239, 68, 68, 0.1);
+  color: #ef4444;
+  border: none;
+  width: 40px;
+  height: 40px;
+  border-radius: 10px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  cursor: pointer;
+  transition: all 0.2s;
+}
+
+.btn-delete:hover {
+  background: #ef4444;
+  color: #fff;
+}
+.btn-delete svg { width: 20px; height: 20px; }
 
 .alert { margin-top: 20px; padding: 12px; border-radius: 10px; font-weight: 700; text-align: center; }
 .alert.success { background: rgba(16, 185, 129, 0.1); color: #10b981; }

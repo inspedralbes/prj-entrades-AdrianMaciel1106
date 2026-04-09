@@ -15,9 +15,15 @@
 
       <div v-if="event" class="movie-hero-content">
         <div class="movie-meta">
-          <span class="rating" v-if="event.rating">★ {{ event.rating.toFixed(1) }}</span>
+          <span class="rating" v-if="event.rating">
+            <svg style="width:16px;height:16px;color:#fbbf24;display:inline;vertical-align:text-bottom;" fill="currentColor" viewBox="0 0 20 20"><path d="M9.049 2.927c.3-.921 1.603-.921 1.902 0l1.07 3.292a1 1 0 00.95.69h3.462c.969 0 1.371 1.24.588 1.81l-2.8 2.034a1 1 0 00-.364 1.118l1.07 3.292c.3.921-.755 1.688-1.54 1.118l-2.8-2.034a1 1 0 00-1.175 0l-2.8 2.034c-.784.57-1.838-.197-1.539-1.118l1.07-3.292a1 1 0 00-.364-1.118L2.98 8.72c-.783-.57-.38-1.81.588-1.81h3.461a1 1 0 00.951-.69l1.07-3.292z"></path></svg>
+            {{ event.rating.toFixed(1) }}
+          </span>
           <span class="year">{{ new Date(event.data).getFullYear() }}</span>
-          <span class="location">📍 {{ event.lloc }}</span>
+          <span class="location">
+            <svg style="width:16px;height:16px;display:inline;vertical-align:text-bottom;margin-right:2px;" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M17.657 16.657L13.414 20.9a1.998 1.998 0 01-2.827 0l-4.244-4.243a8 8 0 1111.314 0z"></path><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 11a3 3 0 11-6 0 3 3 0 016 0z"></path></svg>
+            {{ event.lloc }}
+          </span>
         </div>
         <h1>{{ event.nom }}</h1>
         <p class="synopsis" v-if="event.sinopsi">{{ shorten(event.sinopsi, 180) }}</p>
@@ -32,13 +38,13 @@
             <p>Fes clic a un seient disponible per començar la reserva.</p>
           </div>
           
-          <div class="timer-card" v-if="reservedSeat">
+          <div class="timer-card" v-if="eventStore.selectedSeats.length > 0">
             <div class="timer-content">
-              <span class="timer-label">Reserva expira en:</span>
+              <span class="timer-label">{{ eventStore.selectedSeats.length }} seient(s) | Expira en:</span>
               <span class="timer-value">{{ formattedTimer }}</span>
             </div>
             <button class="checkout-btn" @click="goToCheckout">
-              Pagar {{ reservedSeat.price }}€
+              Pagar {{ eventStore.totalAmount }}€
             </button>
           </div>
         </div>
@@ -84,30 +90,6 @@
         <span class="notif-msg">{{ eventStore.lastNotification.message }}</span>
       </div>
     </TransitionGroup>
-
-    <!-- Modal Reserva -->
-    <Transition name="scale">
-      <div v-if="selectedSeatInternal" class="modal-overlay" @click.self="selectedSeatInternal = null">
-        <div class="modal-content">
-          <div class="modal-header">
-            <div class="seat-preview" :class="selectedSeatInternal.category.toLowerCase()">
-              {{ selectedSeatInternal.id }}
-            </div>
-            <div>
-              <h3>Reserva seient {{ selectedSeatInternal.id }}</h3>
-              <p>{{ selectedSeatInternal.category }} - {{ selectedSeatInternal.price }}€</p>
-            </div>
-          </div>
-          <div class="modal-body">
-            <p>Aquest seient quedarà bloquejat durant 5 minuts perquè puguis completar el pagament tranquil·lament.</p>
-          </div>
-          <div class="modal-footer">
-            <button class="btn-cancel" @click="selectedSeatInternal = null">M'ho he pensat millor</button>
-            <button class="btn-confirm" @click="processReservation">Confirmar Reserva</button>
-          </div>
-        </div>
-      </div>
-    </Transition>
   </div>
 </template>
 
@@ -120,9 +102,6 @@ const eventStore = useEventStore()
 
 const event = computed(() => eventStore.eventInfo)
 const seats = computed(() => eventStore.seats)
-const reservedSeat = computed(() => eventStore.selectedSeats[0])
-
-const selectedSeatInternal = ref(null)
 
 onMounted(async () => {
   const eventId = route.params.id
@@ -151,26 +130,16 @@ onUnmounted(() => {
 const handleSelectSeat = (id) => {
   const seat = seats.value.find(s => s.id === id)
   if (seat && (seat.status === 'AVAILABLE' || seat.status === 'available')) {
-    selectedSeatInternal.value = seat
-  }
-}
-
-const processReservation = () => {
-  if (selectedSeatInternal.value) {
-    eventStore.reserveSeat(selectedSeatInternal.value.id)
-    selectedSeatInternal.value = null
+    eventStore.reserveSeat(seat.id)
   }
 }
 
 const goToCheckout = () => {
-  if (!reservedSeat.value) return
+  if (eventStore.selectedSeats.length === 0) return
   router.push({
     path: '/event/checkout',
     query: {
-      eventId: route.params.id,
-      seatId: reservedSeat.value.id,
-      price: reservedSeat.value.price,
-      category: reservedSeat.value.category
+      eventId: route.params.id
     }
   })
 }
@@ -187,9 +156,9 @@ const shorten = (text, len) => {
 }
 
 const getNotifIcon = (type) => {
-  if (type === 'success') return '✅'
-  if (type === 'error') return '❌'
-  return '🔔'
+  if (type === 'success') return '✓'
+  if (type === 'error') return '!'
+  return 'i'
 }
 </script>
 

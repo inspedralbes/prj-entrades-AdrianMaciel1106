@@ -15,7 +15,7 @@
     
     <div v-else-if="error" class="error-state">
       <div class="error-content">
-        <span class="error-icon">⚠️</span>
+        <span class="error-icon"><svg style="width:40px;height:40px;color:#ef4444" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z"></path></svg></span>
         <h3>No hem pogut carregar les dades</h3>
         <p>{{ error.message }}</p>
         <button @click="refresh" class="retry-btn">Tornar a intentar</button>
@@ -33,7 +33,7 @@
           <img :src="event.imatge" :alt="event.nom" loading="lazy">
           <div class="card-overlay">
             <div class="rating-chip" v-if="event.rating">
-              <span>★</span> {{ event.rating.toFixed(1) }}
+              <span><svg style="width:14px;height:14px;display:inline;vertical-align:middle;margin-top:-2px;" fill="currentColor" viewBox="0 0 20 20"><path d="M9.049 2.927c.3-.921 1.603-.921 1.902 0l1.07 3.292a1 1 0 00.95.69h3.462c.969 0 1.371 1.24.588 1.81l-2.8 2.034a1 1 0 00-.364 1.118l1.07 3.292c.3.921-.755 1.688-1.54 1.118l-2.8-2.034a1 1 0 00-1.175 0l-2.8 2.034c-.784.57-1.838-.197-1.539-1.118l1.07-3.292a1 1 0 00-.364-1.118L2.98 8.72c-.783-.57-.38-1.81.588-1.81h3.461a1 1 0 00.951-.69l1.07-3.292z"></path></svg></span> {{ event.rating.toFixed(1) }}
             </div>
             <div class="category-chip">{{ getRandomCategory(event.id) }}</div>
           </div>
@@ -46,7 +46,7 @@
           </div>
           
           <p class="event-location">
-            <span class="icon">📍</span> {{ event.lloc }}
+            <span class="icon"><svg style="width:16px;height:16px;display:inline;vertical-align:bottom;" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M17.657 16.657L13.414 20.9a1.998 1.998 0 01-2.827 0l-4.244-4.243a8 8 0 1111.314 0z"></path><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 11a3 3 0 11-6 0 3 3 0 016 0z"></path></svg></span> {{ event.lloc }}
           </p>
           
           <div class="card-footer">

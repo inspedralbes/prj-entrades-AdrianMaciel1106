@@ -36,7 +36,12 @@ function getAllEvents() {
   return Array.from(events.values());
 }
 
+function deleteEvent(id) {
+  return events.delete(id);
+}
+
 export {
   createEvent,
   getAllEvents,
+  deleteEvent
 };

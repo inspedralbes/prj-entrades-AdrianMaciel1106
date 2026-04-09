@@ -26,19 +26,15 @@
               </div>
             </div>
             
-            <div class="seat-details">
-              <div class="detail-row">
-                <span>Seient seleccionat</span>
-                <strong>{{ seatId }}</strong>
-              </div>
-              <div class="detail-row">
-                <span>Categoria</span>
-                <span class="badge">{{ category }}</span>
+            <div class="seat-details" v-if="eventStore.selectedSeats.length > 0">
+              <div class="detail-row" v-for="s in eventStore.selectedSeats" :key="s.id">
+                <span>Traca {{ s.id }} <span class="badge">{{ s.category }}</span></span>
+                <strong>{{ s.price.toFixed(2) }}€</strong>
               </div>
               <div class="divider"></div>
               <div class="detail-row total">
                 <span>Total a pagar</span>
-                <span class="price">{{ price }}€</span>
+                <span class="price">{{ eventStore.totalAmount.toFixed(2) }}€</span>
               </div>
             </div>
           </div>
@@ -65,7 +61,10 @@
                   <input type="text" placeholder="CVC" disabled>
                 </div>
               </div>
-              <p class="hint">🚀 Mode de prova actiu: No es farà cap càrrec real.</p>
+              <p class="hint">
+                <svg style="width:14px;height:14px;vertical-align:middle;display:inline;margin-right:4px;" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13 10V3L4 14h7v7l9-11h-7z"></path></svg>
+                Mode de prova actiu: No es farà cap càrrec real.
+              </p>
             </div>
 
             <button type="submit" class="btn-pay" :disabled="isProcessing">
@@ -86,11 +85,8 @@ const route = useRoute()
 const router = useRouter()
 const eventStore = useEventStore()
 
-// Query params (fallback si no hi ha estat al store)
+// Utilitzem info de l'store i no de URL per donar suport a múltiples entrades
 const eventId = route.query.eventId || eventStore.eventInfo?.id
-const seatId = route.query.seatId
-const price = route.query.price
-const category = route.query.category || 'STANDARD'
 
 const isProcessing = ref(false)
 const form = ref({
@@ -99,7 +95,7 @@ const form = ref({
 })
 
 onMounted(async () => {
-  if (!eventId || !seatId) {
+  if (!eventId || eventStore.selectedSeats.length === 0) {
     router.push('/')
     return
   }
@@ -130,31 +126,46 @@ const handlePayment = async () => {
   // Escoltarem la resposta del socket una sola vegada
   const { $socket } = useNuxtApp()
   
+  const mySeatsToProcess = [...eventStore.selectedSeats]
+  let successCount = 0
+  let errorCount = 0
+  
   const handleResponse = (res) => {
-    isProcessing.value = false
-    $socket.off('confirm_purchase_response', handleResponse)
-    
     if (res.success) {
-      // Naveguem a la pàgina final amb les dades
-      router.push({
-        path: '/event/entrades',
-        query: {
-          eventId,
-          seatId,
-          name: form.value.name,
-          movieNom: eventStore.eventInfo.nom,
-          imatge: eventStore.eventInfo.imatge
-        }
-      })
+      successCount++
     } else {
-      eventStore.showNotification(res.error || 'La compra ha fallat. És possible que la reserva hagi expirat.', 'error')
+      errorCount++
+    }
+    
+    // Si hem rebut resposta per tots
+    if (successCount + errorCount >= mySeatsToProcess.length) {
+      isProcessing.value = false
+      $socket.off('confirm_purchase_response', handleResponse)
+      
+      if (successCount === mySeatsToProcess.length) {
+        // Tot venut!
+        router.push({
+          path: '/event/entrades',
+          query: {
+            eventId,
+            seatsIds: mySeatsToProcess.map(s => s.id).join(','),
+            name: form.value.name,
+            movieNom: eventStore.eventInfo.nom,
+            imatge: eventStore.eventInfo.imatge
+          }
+        })
+      } else {
+        eventStore.showNotification(`La compra ha fallat parcialment o totalment. Respostes d'error: ${errorCount}`, 'error')
+      }
     }
   }
 
   $socket.on('confirm_purchase_response', handleResponse)
 
-  // Cridem a l'acció del store
-  eventStore.confirmPurchase(seatId)
+  // Cridem tantes vegades com seients tenim
+  mySeatsToProcess.forEach(s => {
+    eventStore.confirmPurchase(s.id)
+  })
   
   // Timeout de seguretat per si el socket no respon
   setTimeout(() => {

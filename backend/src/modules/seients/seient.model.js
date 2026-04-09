@@ -201,6 +201,10 @@ function releaseExpiredReservations() {
   return released;
 }
 
+function deleteSeats(eventId) {
+  return seatsByEvent.delete(eventId);
+}
+
 // ── Exports ───────────────────────────────────────────────────────────────
 
 export {
@@ -212,4 +216,5 @@ export {
   reserveSeat,
   confirmPurchase,
   releaseExpiredReservations,
+  deleteSeats
 };

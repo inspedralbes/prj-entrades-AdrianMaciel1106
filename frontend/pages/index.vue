@@ -2,7 +2,7 @@
   <div class="page-wrapper">
     <header class="main-header">
       <div class="header-container">
-        <div class="logo">FlowPass <span>🎟️</span></div>
+        <div class="logo">FlowPass <span><svg style="width:28px;height:28px;vertical-align:bottom;color:var(--primary)" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 5v2m0 4v2m0 4v2M5 5a2 2 0 00-2 2v3a2 2 0 110 4v3a2 2 0 002 2h14a2 2 0 002-2v-3a2 2 0 110-4V7a2 2 0 00-2-2H5z"></path></svg></span></div>
         <nav class="main-nav">
           <NuxtLink to="/" class="nav-link active">Cartellera</NuxtLink>
           <NuxtLink to="/admin" class="nav-link admin-link">Admin</NuxtLink>
@@ -18,7 +18,7 @@
           
           <div class="search-container">
             <div class="search-box">
-              <span class="search-icon">🔍</span>
+              <span class="search-icon"><svg style="width:20px;height:20px;color:#94a3b8" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z"></path></svg></span>
               <input 
                 type="text" 
                 v-model="searchQuery" 
@@ -49,9 +49,12 @@
         <div class="footer-logo">FlowPass</div>
         <p>&copy; 2026 Plataforma de Venda d'Entrades. Desenvolupat amb ♥ per Adrian Maciel.</p>
         <div class="social-links">
-          <span class="social-icon">𝕏</span>
-          <span class="social-icon">📸</span>
-          <span class="social-icon">🌐</span>
+          <!-- X icon -->
+          <a href="#" class="social-icon"><svg style="width:20px;height:20px;" fill="currentColor" viewBox="0 0 24 24"><path d="M18.244 2.25h3.308l-7.227 8.26 8.502 11.24H16.17l-5.214-6.817L4.99 21.75H1.68l7.73-8.835L1.254 2.25H8.08l4.713 6.231zm-1.161 17.52h1.833L7.084 4.126H5.117z"/></svg></a>
+          <!-- Instagram icon -->
+          <a href="#" class="social-icon"><svg style="width:20px;height:20px;" fill="none" stroke="currentColor" viewBox="0 0 24 24"><rect width="20" height="20" x="2" y="2" rx="5" ry="5" stroke-width="2"></rect><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M16 11.37A4 4 0 1112.63 8 4 4 0 0116 11.37zm1.5-4.87h.01"></path></svg></a>
+          <!-- Web icon -->
+          <a href="#" class="social-icon"><svg style="width:20px;height:20px;" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M21 12a9 9 0 01-9 9m9-9a9 9 0 00-9-9m9 9H3m9 9a9 9 0 01-9-9m9 9c1.657 0 3-4.03 3-9s-1.343-9-3-9m0 18c-1.657 0-3-4.03-3-9s1.343-9 3-9m-9 9a9 9 0 019-9"></path></svg></a>
         </div>
       </div>
     </footer>

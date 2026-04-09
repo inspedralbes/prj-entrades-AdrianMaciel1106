@@ -8,7 +8,10 @@
       
       <div v-else class="ticket">
         <div class="ticket-header">
-          <div class="success-badge">✓ Compra Confirmada</div>
+          <div class="success-badge">
+            <svg style="width:16px;height:16px;display:inline-block;vertical-align:text-bottom;margin-right:4px;" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="3" d="M5 13l4 4L19 7"></path></svg>
+            Compra Confirmada
+          </div>
           <h2>Aquesta és la teva entrada</h2>
         </div>
         
@@ -26,8 +29,8 @@
                 <span class="value">{{ query.name }}</span>
               </div>
               <div class="info-item">
-                <span class="label">Seient</span>
-                <span class="value spotlight">{{ query.seatId }}</span>
+                <span class="label">Seients</span>
+                <span class="value spotlight">{{ query.seatsIds || query.seatId }}</span>
               </div>
               <div class="info-item">
                 <span class="label">Data de compra</span>
@@ -82,7 +85,7 @@ const currentDate = new Date().toLocaleDateString('ca-ES')
 const reservationId = Math.random().toString(36).substr(2, 9).toUpperCase()
 
 onMounted(() => {
-  if (!query.eventId || !query.seatId) {
+  if (!query.eventId || (!query.seatId && !query.seatsIds)) {
     router.push('/')
     return
   }
