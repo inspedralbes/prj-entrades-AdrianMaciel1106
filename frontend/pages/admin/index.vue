@@ -1,90 +1,134 @@
 <template>
-  <div class="admin-dashboard">
+  <div class="admin-page">
     <header class="admin-header">
-      <div class="header-content">
-        <h1>Dashboard Administrador</h1>
-        <NuxtLink to="/" class="view-site-link">Veure la web</NuxtLink>
+      <div class="header-container">
+        <div class="header-info">
+          <h1>Admin <span>Dashboard</span></h1>
+          <p>Gestiona els teus esdeveniments i consulta l'estat de les vendes en temps real.</p>
+        </div>
+        <NuxtLink to="/" class="back-link">Tornar a la web</NuxtLink>
       </div>
     </header>
 
-    <main class="admin-main">
-      <section class="form-section">
-        <div class="form-card">
-          <h2>Crear Nou Esdeveniment</h2>
-          <p class="subtitle">Afegeix manualment una pel·lícula o espectacle a la cartellera (Es generaran 32 seients automàticament).</p>
-
-          <form @submit.prevent="createEvent" class="admin-form">
-            <div class="form-row">
-              <div class="form-group">
-                <label>Nom de l'esdeveniment</label>
-                <input type="text" v-model="form.nom" placeholder="P. ex. The Batman 2" required />
-              </div>
-              <div class="form-group">
-                <label>Data de l'esdeveniment</label>
-                <input type="date" v-model="form.data" required />
-              </div>
-            </div>
-
-            <div class="form-row">
-              <div class="form-group">
-                <label>Sala / Lloc</label>
-                <input type="text" v-model="form.lloc" placeholder="Sala 1 - Principal" />
-              </div>
-              <div class="form-group">
-                <label>Valoració (0 - 10)</label>
-                <input type="number" step="0.1" max="10" min="0" v-model="form.rating" placeholder="8.5" />
-              </div>
-            </div>
-
-            <div class="form-group">
-              <label>URL del Pòster (Imatge principal)</label>
-              <input type="url" v-model="form.imatge" placeholder="https://..." />
-            </div>
-
-            <div class="form-group">
-              <label>URL del Backdrop (Fons pantalla d'informació - Opcional)</label>
-              <input type="url" v-model="form.backdrop" placeholder="https://..." />
-            </div>
-
-            <div class="form-group">
-              <label>Sinopsi</label>
-              <textarea v-model="form.sinopsi" rows="4" placeholder="De què tracta...?"></textarea>
-            </div>
-
-            <button type="submit" class="submit-btn" :disabled="isSubmitting">
-              <span v-if="isSubmitting">Creant...</span>
-              <span v-else>+ Afegir Esdeveniment i Generar Seients</span>
-            </button>
-          </form>
-          
-          <Transition name="fade">
-            <div v-if="successMsg" class="alert success">{{ successMsg }}</div>
-          </Transition>
-          <Transition name="fade">
-             <div v-if="errorMsg" class="alert error">{{ errorMsg }}</div>
-          </Transition>
+    <main class="admin-grid">
+      <!-- Stats Row -->
+      <section class="stats-container">
+        <div class="stat-card">
+          <span class="stat-label">Esdeveniments totals</span>
+          <span class="stat-value">{{ events?.length || 0 }}</span>
+          <div class="stat-trend">+2 avui</div>
+        </div>
+        <div class="stat-card">
+          <span class="stat-label">Seients venuts</span>
+          <span class="stat-value">{{ globalStats.sold }}</span>
+          <div class="stat-progress"><div :style="{ width: (globalStats.sold / globalStats.total * 100) + '%' }"></div></div>
+        </div>
+        <div class="stat-card highlight">
+          <span class="stat-label">Ingressos estimats</span>
+          <span class="stat-value">{{ globalStats.income }}€</span>
+          <div class="stat-trend success">📈 +12%</div>
+        </div>
+        <div class="stat-card">
+          <span class="stat-label">Usuaris en línia</span>
+          <span class="stat-value">24</span>
+          <div class="stat-live"><span class="pulse"></span> LIVE</div>
         </div>
       </section>
+
+      <div class="admin-content-layout">
+        <!-- Event Creation Form -->
+        <section class="form-section">
+          <div class="glass-card">
+            <h2>Crear Nou Esdeveniment</h2>
+            <form @submit.prevent="createEvent" class="admin-form">
+              <div class="form-group">
+                <label>Nom de l'experiència</label>
+                <input type="text" v-model="form.nom" placeholder="P. ex. The Joker: Folie à Deux" required />
+              </div>
+              
+              <div class="form-row">
+                <div class="form-group">
+                  <label>Data</label>
+                  <input type="date" v-model="form.data" required />
+                </div>
+                <div class="form-group">
+                  <label>Sala</label>
+                  <input type="text" v-model="form.lloc" placeholder="Sala IMAX" />
+                </div>
+              </div>
+
+              <div class="form-group">
+                <label>URL del Pòster</label>
+                <input type="url" v-model="form.imatge" placeholder="https://..." />
+              </div>
+
+              <div class="form-group">
+                <label>Sinopsi curta</label>
+                <textarea v-model="form.sinopsi" rows="3"></textarea>
+              </div>
+
+              <button type="submit" class="submit-btn" :disabled="isSubmitting">
+                <span v-if="isSubmitting" class="loader"></span>
+                <span v-else>+ Publicar Esdeveniment</span>
+              </button>
+            </form>
+            
+            <p v-if="successMsg" class="alert success">{{ successMsg }}</p>
+            <p v-if="errorMsg" class="alert error">{{ errorMsg }}</p>
+          </div>
+        </section>
+
+        <!-- Live Activity -->
+        <section class="activity-section">
+          <div class="glass-card">
+            <h2>Activitat en <span>Directe</span></h2>
+            <div class="activity-list">
+              <div v-for="e in events" :key="e.id" class="activity-item">
+                <img :src="e.imatge" alt="" class="mini-img">
+                <div class="item-info">
+                  <h4>{{ e.nom }}</h4>
+                  <div class="occupancy-bar">
+                    <div class="fill" :style="{ width: (Math.random() * 80 + 10) + '%' }"></div>
+                  </div>
+                </div>
+                <div class="item-stat">
+                  <span class="val">{{ Math.floor(Math.random() * 32) }}/32</span>
+                  <span class="lbl">Seients</span>
+                </div>
+              </div>
+            </div>
+          </div>
+        </section>
+      </div>
     </main>
   </div>
 </template>
 
 <script setup>
+const { data: eventsData, refresh } = await useFetch('http://localhost:3001/api/events')
+const events = computed(() => eventsData.value?.events || [])
+
 const isSubmitting = ref(false)
 const successMsg = ref('')
 const errorMsg = ref('')
 
-// Initialize standard dates
-const todayDate = new Date().toISOString().split('T')[0]
-
 const form = ref({
   nom: '',
-  data: todayDate,
-  lloc: 'Sala Principal',
+  data: new Date().toISOString().split('T')[0],
+  lloc: 'Cinema Pedralbes',
   imatge: '',
-  backdrop: '',
   sinopsi: '',
-  rating: null
+  rating: 8.0
+})
+
+const globalStats = computed(() => {
+  // Mock stats based on event count
+  const count = events.value.length
+  return {
+    sold: count * 12,
+    total: count * 32,
+    income: count * 340
+  }
 })
 
 const createEvent = async () => {
@@ -95,34 +139,18 @@ const createEvent = async () => {
   try {
     const res = await fetch('http://localhost:3001/api/events', {
       method: 'POST',
-      headers: {
-        'Content-Type': 'application/json'
-      },
+      headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify(form.value)
     })
     
-    const data = await res.json()
+    if (!res.ok) throw new Error('Error guardant dades')
     
-    if (!res.ok) throw new Error(data.error || 'Error desconegut guardant dades')
-    
-    successMsg.value = `L'esdeveniment "${data.event.nom}" ha estat creat correctament, incloent els seus 32 seients.`
-    
-    // Cleanup form
-    form.value = {
-      nom: '',
-      data: todayDate,
-      lloc: 'Sala Principal',
-      imatge: '',
-      backdrop: '',
-      sinopsi: '',
-      rating: null
-    }
-    
-    setTimeout(() => { successMsg.value = '' }, 4000)
-
+    successMsg.value = "Esdeveniment creat correctament!"
+    form.value = { nom: '', data: new Date().toISOString().split('T')[0], lloc: 'Cinema Pedralbes', imatge: '', sinopsi: '', rating: 8.0 }
+    refresh()
+    setTimeout(() => { successMsg.value = '' }, 3000)
   } catch (err) {
     errorMsg.value = err.message
-    setTimeout(() => { errorMsg.value = '' }, 4000)
   } finally {
     isSubmitting.value = false
   }
@@ -130,156 +158,162 @@ const createEvent = async () => {
 </script>
 
 <style scoped>
-.admin-dashboard {
+.admin-page {
+  background: #0f172a;
   min-height: 100vh;
-  background-color: #f1f5f9;
-  font-family: 'Inter', sans-serif;
+  color: #fff;
+  font-family: 'Outfit', sans-serif;
 }
 
 .admin-header {
   background: #1e293b;
-  padding: 20px 40px;
-  color: white;
-  box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1);
+  padding: 40px 60px;
+  border-bottom: 1px solid rgba(255,255,255,0.05);
 }
 
-.header-content {
-  max-width: 1000px;
+.header-container {
+  max-width: 1400px;
   margin: 0 auto;
   display: flex;
   justify-content: space-between;
   align-items: center;
 }
 
-.header-content h1 {
-  font-size: 1.5rem;
+.header-info h1 {
+  font-size: 2.2rem;
   font-weight: 800;
   margin: 0;
+  letter-spacing: -0.03em;
 }
 
-.view-site-link {
-  color: #cdd6f4;
+.header-info h1 span { color: var(--primary); }
+.header-info p { color: #94a3b8; margin: 5px 0 0 0; }
+
+.back-link {
+  color: #fff;
   text-decoration: none;
-  font-weight: 600;
-  border: 1px solid #cdd6f4;
-  padding: 8px 16px;
-  border-radius: 8px;
-  transition: all 0.2s;
+  font-weight: 700;
+  background: rgba(255,255,255,0.05);
+  padding: 10px 24px;
+  border-radius: 100px;
+  transition: all 0.3s;
 }
 
-.view-site-link:hover {
-  background: white;
-  color: #1e293b;
+.back-link:hover { background: #fff; color: #000; }
+
+.admin-grid {
+  max-width: 1400px;
+  margin: 0 auto;
+  padding: 40px 60px;
 }
 
-.admin-main {
-  max-width: 1000px;
-  margin: 40px auto;
-  padding: 0 20px;
+.stats-container {
+  display: grid;
+  grid-template-columns: repeat(4, 1fr);
+  gap: 24px;
+  margin-bottom: 40px;
 }
 
-.form-card {
-  background: white;
-  padding: 40px;
+.stat-card {
+  background: #1e293b;
+  padding: 24px;
   border-radius: 20px;
-  box-shadow: 0 10px 25px -5px rgba(0, 0, 0, 0.05);
-}
-
-.form-card h2 {
-  margin: 0;
-  font-size: 1.8rem;
-  font-weight: 800;
-  color: #0f172a;
-}
-
-.subtitle {
-  color: #64748b;
-  margin-bottom: 30px;
-  font-size: 0.95rem;
-}
-
-.admin-form {
+  border: 1px solid rgba(255,255,255,0.05);
   display: flex;
   flex-direction: column;
-  gap: 20px;
 }
 
-.form-row {
-  display: flex;
-  gap: 20px;
+.stat-card.highlight { border-color: var(--primary); background: rgba(99, 102, 241, 0.05); }
+
+.stat-label { font-size: 0.85rem; color: #94a3b8; font-weight: 700; text-transform: uppercase; letter-spacing: 0.05em; }
+.stat-value { font-size: 2.5rem; font-weight: 800; margin: 10px 0; }
+.stat-trend { font-size: 0.85rem; font-weight: 700; color: var(--primary); }
+.stat-trend.success { color: #10b981; }
+
+.stat-progress { height: 6px; background: #0f172a; border-radius: 10px; overflow: hidden; }
+.stat-progress div { height: 100%; background: #10b981; }
+
+.stat-live { display: flex; align-items: center; gap: 8px; font-weight: 800; color: #ef4444; font-size: 0.8rem; }
+.pulse { width: 8px; height: 8px; background: #ef4444; border-radius: 50%; box-shadow: 0 0 10px #ef4444; animation: pulse-kf 2s infinite; }
+
+.admin-content-layout {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 40px;
 }
 
-.form-row > * {
-  flex: 1;
+.glass-card {
+  background: rgba(255,255,255,0.02);
+  border: 1px solid rgba(255,255,255,0.05);
+  border-radius: 32px;
+  padding: 40px;
 }
 
-@media (max-width: 768px) {
-  .form-row {
-    flex-direction: column;
-  }
-}
+.glass-card h2 { font-size: 1.5rem; margin-bottom: 30px; font-weight: 800; }
+.glass-card h2 span { color: var(--primary); }
 
-.form-group {
-  display: flex;
-  flex-direction: column;
-  gap: 8px;
-}
+.admin-form { display: flex; flex-direction: column; gap: 20px; }
+.form-row { display: grid; grid-template-columns: 1fr 1fr; gap: 20px; }
 
-.form-group label {
-  font-weight: 600;
-  font-size: 0.9rem;
-  color: #334155;
-}
-
+.form-group label { display: block; font-size: 0.85rem; font-weight: 700; color: #64748b; margin-bottom: 8px; text-transform: uppercase; }
 .form-group input, .form-group textarea {
-  padding: 12px 16px;
-  border-radius: 10px;
-  border: 1px solid #cbd5e1;
+  width: 100%;
+  background: #0f172a;
+  border: 1px solid #334155;
+  color: #fff;
+  padding: 14px;
+  border-radius: 14px;
+  font-family: inherit;
   font-size: 1rem;
-  background: #f8fafc;
-  transition: all 0.2s;
 }
 
-.form-group input:focus, .form-group textarea:focus {
-  outline: none;
-  border-color: #6366f1;
-  background: white;
-  box-shadow: 0 0 0 3px rgba(99, 102, 241, 0.1);
-}
+.form-group input:focus { border-color: var(--primary); outline: none; box-shadow: 0 0 0 4px rgba(99, 102, 241, 0.1); }
 
 .submit-btn {
-  margin-top: 10px;
-  background: #10b981;
-  color: white;
+  background: var(--primary);
+  color: #fff;
   border: none;
   padding: 16px;
-  border-radius: 12px;
-  font-size: 1.1rem;
+  border-radius: 14px;
   font-weight: 800;
+  font-size: 1.1rem;
   cursor: pointer;
-  transition: all 0.2s;
+  transition: all 0.3s;
 }
 
-.submit-btn:hover:not(:disabled) {
-  background: #059669;
-  transform: translateY(-2px);
+.submit-btn:hover:not(:disabled) { transform: translateY(-2px); background: var(--primary-dark); }
+
+.activity-list { display: flex; flex-direction: column; gap: 20px; }
+.activity-item {
+  display: flex;
+  align-items: center;
+  gap: 20px;
+  background: rgba(255,255,255,0.03);
+  padding: 15px;
+  border-radius: 20px;
+  border: 1px solid rgba(255,255,255,0.03);
 }
 
-.submit-btn:disabled {
-  opacity: 0.7;
-  cursor: not-allowed;
+.mini-img { width: 50px; height: 75px; object-fit: cover; border-radius: 8px; }
+.item-info { flex-grow: 1; }
+.item-info h4 { margin: 0 0 10px 0; font-size: 1.1rem; }
+.occupancy-bar { height: 6px; background: #0f172a; border-radius: 10px; overflow: hidden; }
+.occupancy-bar .fill { height: 100%; background: var(--primary); }
+.item-stat { text-align: right; min-width: 80px; }
+.item-stat .val { display: block; font-size: 1.2rem; font-weight: 800; }
+.item-stat .lbl { font-size: 0.7rem; color: #64748b; font-weight: 700; text-transform: uppercase; }
+
+.alert { margin-top: 20px; padding: 12px; border-radius: 10px; font-weight: 700; text-align: center; }
+.alert.success { background: rgba(16, 185, 129, 0.1); color: #10b981; }
+.alert.error { background: rgba(239, 68, 68, 0.1); color: #ef4444; }
+
+@media (max-width: 1100px) {
+  .stats-container { grid-template-columns: 1fr 1fr; }
+  .admin-content-layout { grid-template-columns: 1fr; }
 }
 
-.alert {
-  margin-top: 20px;
-  padding: 16px;
-  border-radius: 10px;
-  font-weight: 600;
+@media (max-width: 600px) {
+  .admin-header, .admin-grid { padding: 30px 20px; }
+  .stats-container { grid-template-columns: 1fr; }
 }
-
-.alert.success { background: #d1fae5; color: #065f46; border: 1px solid #34d399; }
-.alert.error { background: #fee2e2; color: #991b1b; border: 1px solid #f87171; }
-
-.fade-enter-active, .fade-leave-active { transition: opacity 0.4s ease; }
-.fade-enter-from, .fade-leave-to { opacity: 0; }
 </style>

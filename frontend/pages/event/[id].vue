@@ -1,108 +1,110 @@
 <template>
   <div class="event-page">
-    <header class="event-header" :style="event?.backdrop ? `background-image: linear-gradient(rgba(0,0,0,0.6), rgba(0,0,0,0.9)), url(${event.backdrop})` : ''">
-      <NuxtLink to="/" class="back-link">← Tornar a la llista</NuxtLink>
-      <div v-if="event" class="event-title-box movie-title-box">
-        <div class="movie-meta" v-if="event.rating">
-          <span class="rating">★ {{ event.rating.toFixed(1) }}</span>
-          <span class="divider">|</span>
-          <span class="date">{{ event.data }}</span>
+    <header class="event-header" :style="event?.backdrop ? `background-image: linear-gradient(to bottom, rgba(15, 23, 42, 0.4), rgba(15, 23, 42, 1)), url(${event.backdrop})` : ''">
+      <div class="header-overlay"></div>
+      <div class="header-top">
+        <NuxtLink to="/" class="back-btn">
+          <span class="icon">←</span> Tornar
+        </NuxtLink>
+        <div class="header-actions">
+           <div class="live-indicator">
+             <span class="dot"></span> LIVE
+           </div>
+        </div>
+      </div>
+
+      <div v-if="event" class="movie-hero-content">
+        <div class="movie-meta">
+          <span class="rating" v-if="event.rating">★ {{ event.rating.toFixed(1) }}</span>
+          <span class="year">{{ new Date(event.data).getFullYear() }}</span>
+          <span class="location">📍 {{ event.lloc }}</span>
         </div>
         <h1>{{ event.nom }}</h1>
-        <p class="synopsis" v-if="event.sinopsi">{{ event.sinopsi }}</p>
-        <p class="location">🎬 {{ event.lloc }}</p>
+        <p class="synopsis" v-if="event.sinopsi">{{ shorten(event.sinopsi, 180) }}</p>
       </div>
     </header>
 
-    <div class="seat-map-container">
-      <div class="map-header">
-        <h2>Mapa de Seients</h2>
-        <div class="purchase-info-bar" v-if="reservedSeat">
-          <div class="info">
-            <span class="pulse"></span>
-            Tenim reservat el seient <strong>{{ reservedSeat.id }}</strong> ({{ reservedSeat.price }}€)
-            <span class="timer-badge" v-if="eventStore.timer > 0">{{ formattedTimer }}</span>
+    <div class="booking-section">
+      <div class="map-container">
+        <div class="map-header">
+          <div class="title-area">
+            <h2>Selecciona els teus seients</h2>
+            <p>Fes clic a un seient disponible per començar la reserva.</p>
           </div>
-          <button class="btn-purchase" @click="goToCheckout">Finalitzar Compra</button>
-        </div>
-        <div v-else class="legend">
-          <div class="legend-item"><span class="dot available"></span> Lliure</div>
-          <div class="legend-item"><span class="dot reserved"></span> Reservat</div>
-          <div class="legend-item"><span class="dot sold"></span> Venut</div>
-        </div>
-      </div>
-
-      <div class="map-container-inner">
-        <div class="screen">PANTALLA</div>
-        
-        <div class="seats-grid">
-          <Seient 
-            v-for="seat in seats" 
-            :key="seat.id"
-            v-bind="seat"
-            @select="handleSelectSeat"
-          />
-        </div>
-      </div>
-
-      <div class="map-footer">
-        <div class="legend">
-          <div class="legend-group">
-            <span class="label">Disponibilitat:</span>
-            <div class="legend-item"><span class="dot available"></span> Lliure</div>
-            <div class="legend-item"><span class="dot reserved"></span> Reservat</div>
-            <div class="legend-item"><span class="dot sold"></span> Venut</div>
+          
+          <div class="timer-card" v-if="reservedSeat">
+            <div class="timer-content">
+              <span class="timer-label">Reserva expira en:</span>
+              <span class="timer-value">{{ formattedTimer }}</span>
+            </div>
+            <button class="checkout-btn" @click="goToCheckout">
+              Pagar {{ reservedSeat.price }}€
+            </button>
           </div>
+        </div>
+
+        <div class="cinema-room">
+          <div class="screen-container">
+            <div class="screen-surface"></div>
+            <div class="screen-glow"></div>
+            <span class="screen-label">PANTALLA</span>
+          </div>
+          
+          <div class="seats-layout">
+            <div class="seats-grid">
+              <Seient 
+                v-for="seat in seats" 
+                :key="seat.id"
+                v-bind="seat"
+                @select="handleSelectSeat"
+              />
+            </div>
+          </div>
+        </div>
+
+        <div class="map-footer">
           <div class="legend-group">
-            <span class="label">Categories:</span>
-            <div class="legend-item"><span class="sq standard"></span> Estàndard (15€)</div>
-            <div class="legend-item"><span class="sq premium"></span> Premium (30€)</div>
-            <div class="legend-item"><span class="sq vip"></span> VIP (60€)</div>
+            <div class="legend-item"><span class="sw-dot available"></span> Lliure</div>
+            <div class="legend-item"><span class="sw-dot reserved"></span> Reservat</div>
+            <div class="legend-item"><span class="sw-dot sold"></span> Venut</div>
+          </div>
+          <div class="category-pills">
+            <div class="cat-pill standard"><span></span> Estàndard</div>
+            <div class="cat-pill premium"><span></span> Premium</div>
+            <div class="cat-pill vip"><span></span> VIP</div>
           </div>
         </div>
       </div>
     </div>
 
-    <!-- Feedback Overlay -->
-    <Transition name="fade">
-      <div v-if="eventStore.lastNotification" class="notification" :class="eventStore.lastNotification.type">
-        {{ eventStore.lastNotification.message }}
+    <!-- Notifications -->
+    <TransitionGroup name="list" tag="div" class="notifications-container">
+      <div v-if="eventStore.lastNotification" :key="eventStore.lastNotification.message" class="notification-toast" :class="eventStore.lastNotification.type">
+        <span class="notif-icon">{{ getNotifIcon(eventStore.lastNotification.type) }}</span>
+        <span class="notif-msg">{{ eventStore.lastNotification.message }}</span>
       </div>
-    </Transition>
+    </TransitionGroup>
 
-    <!-- Modal de Confirmació -->
-    <Transition name="modal">
-      <div v-if="selectedSeat" class="modal-overlay" @click.self="selectedSeat = null">
+    <!-- Modal Reserva -->
+    <Transition name="scale">
+      <div v-if="selectedSeatInternal" class="modal-overlay" @click.self="selectedSeatInternal = null">
         <div class="modal-content">
           <div class="modal-header">
-            <span class="category-badge" :class="selectedSeat.category.toLowerCase()">{{ selectedSeat.category }}</span>
-            <h3>Confirmar Reserva: {{ selectedSeat.id }}</h3>
+            <div class="seat-preview" :class="selectedSeatInternal.category.toLowerCase()">
+              {{ selectedSeatInternal.id }}
+            </div>
+            <div>
+              <h3>Reserva seient {{ selectedSeatInternal.id }}</h3>
+              <p>{{ selectedSeatInternal.category }} - {{ selectedSeatInternal.price }}€</p>
+            </div>
           </div>
-          <div class="price-row">
-            <span class="label">Preu:</span>
-            <span class="value">{{ selectedSeat.price }}€</span>
+          <div class="modal-body">
+            <p>Aquest seient quedarà bloquejat durant 5 minuts perquè puguis completar el pagament tranquil·lament.</p>
           </div>
-          <p class="timer-info">Tens {{ eventStore.timer }} segons per confirmar la compra després de reservar.</p>
-          <div class="modal-actions">
-            <button class="btn secondary" @click="selectedSeat = null">Cancel·lar</button>
-            <button class="btn primary" @click="processReservation">Reservar Ara</button>
+          <div class="modal-footer">
+            <button class="btn-cancel" @click="selectedSeatInternal = null">M'ho he pensat millor</button>
+            <button class="btn-confirm" @click="processReservation">Confirmar Reserva</button>
           </div>
-        </div>
-      </div>
-    </Transition>
-
-    <!-- Modal d'Èxit -->
-    <Transition name="modal">
-      <div v-if="purchasedSeat" class="modal-overlay success-overlay" @click.self="purchasedSeat = null">
-        <div class="modal-content success-content">
-          <div class="success-icon">✓</div>
-          <h3>Compra d'Èxit!</h3>
-          <p>Has adquirit l'entrada per a <strong>{{ event?.nom }}</strong>.</p>
-          <div class="ticket-summary">
-            <div class="row"><span>Seient:</span> <strong>{{ purchasedSeat.id }}</strong></div>
-            <div class="row"><span>Preu:</span> <strong>{{ purchasedSeat.price }}€</strong></div>
-          </div>
-          <button class="btn primary" @click="purchasedSeat = null">Tancar</button>
         </div>
       </div>
     </Transition>
@@ -110,37 +112,33 @@
 </template>
 
 <script setup>
+import { useEventStore } from '~/stores/useEventStores'
+
 const router = useRouter()
 const route = useRoute()
 const eventStore = useEventStore()
 
-// Computed per facilitar l'accés
 const event = computed(() => eventStore.eventInfo)
 const seats = computed(() => eventStore.seats)
-const reservedSeat = computed(() => eventStore.selectedSeats[0]) // Agafem el primer com a exemple d'UI
+const reservedSeat = computed(() => eventStore.selectedSeats[0])
 
-const selectedSeatInternal = ref(null) // Seient clicat però no reservat encara (modal)
+const selectedSeatInternal = ref(null)
 
 onMounted(async () => {
   const eventId = route.params.id
-  
+  eventStore.initSocket(eventId)
+
   try {
-    // 1. Carregar dades inicials
     const res = await fetch(`http://localhost:3001/api/events/${eventId}/seats`)
     const data = await res.json()
     
-    // 2. Carregar metadata de l'esdeveniment
-    const eventsRes = await fetch('http://localhost:3001/api/events')
-    const eventsData = await eventsRes.json()
-    const currentEvent = eventsData.events.find((e) => e.id === eventId)
-    
-    if (currentEvent) {
-      eventStore.setEventInfo(currentEvent)
+    // Assegurar dades d'esdeveniment si no hi són
+    if (!eventStore.eventInfo) {
+      const eRes = await fetch('http://localhost:3001/api/events')
+      const eData = await eRes.json()
+      const current = eData.events.find(e => e.id === eventId)
+      if (current) eventStore.setEventInfo(current)
     }
-    
-    // 3. Inicialitzar Sockets a través del Store
-    eventStore.initSocket(eventId)
-
   } catch (err) {
     eventStore.showNotification('Error connectant amb el servidor', 'error')
   }
@@ -152,7 +150,7 @@ onUnmounted(() => {
 
 const handleSelectSeat = (id) => {
   const seat = seats.value.find(s => s.id === id)
-  if (seat && seat.status === 'available') {
+  if (seat && (seat.status === 'AVAILABLE' || seat.status === 'available')) {
     selectedSeatInternal.value = seat
   }
 }
@@ -166,7 +164,6 @@ const processReservation = () => {
 
 const goToCheckout = () => {
   if (!reservedSeat.value) return
-  
   router.push({
     path: '/event/checkout',
     query: {
@@ -178,226 +175,276 @@ const goToCheckout = () => {
   })
 }
 
-// Formatejar el temps del temporitzador (mm:ss)
 const formattedTimer = computed(() => {
-  const minutes = Math.floor(eventStore.timer / 60)
-  const seconds = eventStore.timer % 60
-  return `${minutes}:${seconds.toString().padStart(2, '0')}`
+  const m = Math.floor(eventStore.timer / 60)
+  const s = eventStore.timer % 60
+  return `${m}:${s.toString().padStart(2, '0')}`
 })
+
+const shorten = (text, len) => {
+  if (text.length <= len) return text
+  return text.substring(0, len) + '...'
+}
+
+const getNotifIcon = (type) => {
+  if (type === 'success') return '✅'
+  if (type === 'error') return '❌'
+  return '🔔'
+}
 </script>
 
 <style scoped>
 .event-page {
-  padding: 40px;
-  max-width: 1200px;
-  margin: 0 auto;
+  background: #0f172a;
+  min-height: 100vh;
+  color: #f1f5f9;
 }
 
 .event-header {
-  margin-bottom: -40px;
-  padding: 60px 40px 100px;
+  height: 60vh;
   background-size: cover;
-  background-position: center;
-  border-radius: 0 0 40px 40px;
+  background-position: center 20%;
   position: relative;
-  overflow: hidden;
+  display: flex;
+  flex-direction: column;
+  justify-content: flex-end;
+  padding: 40px 60px;
 }
 
-.movie-title-box h1 {
-  font-size: 3.5rem;
-  font-weight: 900;
+.header-overlay {
+  position: absolute;
+  inset: 0;
+  background: linear-gradient(to top, #0f172a 0%, transparent 60%);
+}
+
+.header-top {
+  position: absolute;
+  top: 40px;
+  left: 40px;
+  right: 40px;
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  z-index: 10;
+}
+
+.back-btn {
+  background: rgba(255, 255, 255, 0.1);
+  backdrop-filter: blur(10px);
+  padding: 10px 20px;
+  border-radius: 100px;
+  color: #fff;
+  text-decoration: none;
+  font-weight: 700;
+  border: 1px solid rgba(255, 255, 255, 0.1);
+  transition: all 0.3s;
+}
+
+.back-btn:hover {
+  background: rgba(255, 255, 255, 0.2);
+  transform: translateX(-5px);
+}
+
+.live-indicator {
+  background: rgba(239, 68, 68, 0.2);
+  border: 1px solid rgba(239, 68, 68, 0.4);
+  padding: 6px 14px;
+  border-radius: 100px;
+  font-size: 0.75rem;
+  font-weight: 800;
+  color: #ef4444;
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.live-indicator .dot {
+  width: 6px;
+  height: 6px;
+  background: #ef4444;
+  border-radius: 50%;
+  box-shadow: 0 0 8px #ef4444;
+}
+
+.movie-hero-content {
+  position: relative;
+  z-index: 2;
+  max-width: 800px;
+}
+
+.movie-hero-content h1 {
+  font-size: 4rem;
+  font-weight: 800;
   margin: 10px 0;
-  color: white;
-  text-shadow: 0 4px 10px rgba(0,0,0,0.5);
+  letter-spacing: -0.04em;
+  line-height: 1.1;
 }
 
 .movie-meta {
   display: flex;
+  gap: 20px;
   align-items: center;
-  gap: 15px;
-  color: #fbbf24;
-  font-weight: 800;
-  font-size: 1rem;
+  font-weight: 700;
+  font-size: 0.95rem;
 }
 
-.movie-meta .divider { color: rgba(255,255,255,0.3); }
-.movie-meta .date { color: #d1d5db; }
+.rating { color: #fbbf24; }
+.year, .location { color: #94a3b8; }
 
 .synopsis {
-  max-width: 800px;
-  color: #d1d5db;
-  font-size: 1.1rem;
+  color: #94a3b8;
   line-height: 1.6;
-  margin: 20px 0;
+  font-size: 1.1rem;
 }
 
-.location {
-  color: #9ca3af;
-  font-size: 1rem;
-  font-weight: 600;
+.booking-section {
+  padding: 60px 40px;
+  margin-top: -60px;
+  position: relative;
+  z-index: 5;
 }
 
-.back-link {
-  color: white;
-  text-decoration: none;
-  font-weight: 700;
-  display: inline-block;
-  margin-bottom: 30px;
-  background: rgba(255,255,255,0.1);
-  padding: 8px 16px;
-  border-radius: 100px;
-  backdrop-filter: blur(10px);
-  border: 1px solid rgba(255,255,255,0.2);
-  transition: all 0.2s;
-}
-
-.back-link:hover {
-  background: rgba(255,255,255,0.2);
-  transform: translateX(-5px);
-}
-
-.event-title-box p {
-  color: #6b7280;
-  font-size: 1.25rem;
-  margin-top: 10px;
-}
-
-.seat-map-container {
-  background: white;
+.map-container {
+  max-width: 1000px;
+  margin: 0 auto;
+  background: #1e293b;
+  border-radius: 40px;
   padding: 40px;
-  border-radius: 30px;
-  box-shadow: 0 4px 20px rgba(0,0,0,0.05);
+  box-shadow: 0 40px 100px rgba(0,0,0,0.5);
+  border: 1px solid rgba(255,255,255,0.05);
 }
 
 .map-header {
   display: flex;
   justify-content: space-between;
   align-items: center;
-  margin-bottom: 30px;
-  padding-bottom: 20px;
-  border-bottom: 2px solid #f3f4f6;
+  margin-bottom: 60px;
+  padding-bottom: 30px;
+  border-bottom: 1px solid rgba(255,255,255,0.05);
 }
 
-.legend {
+.title-area h2 { margin: 0; font-size: 1.8rem; font-weight: 800; }
+.title-area p { margin: 5px 0 0 0; color: #64748b; font-weight: 600; }
+
+.timer-card {
   display: flex;
-  flex-direction: column;
+  background: #0f172a;
+  padding: 8px 10px 8px 20px;
+  border-radius: 18px;
+  align-items: center;
   gap: 20px;
+  border: 1px solid var(--primary);
+  box-shadow: 0 0 20px rgba(99, 102, 241, 0.2);
 }
 
-.legend-group {
-  display: flex;
-  align-items: center;
-  gap: 15px;
-}
+.timer-label { font-size: 0.8rem; font-weight: 700; color: #94a3b8; }
+.timer-value { font-family: monospace; font-size: 1.4rem; font-weight: 800; color: #fff; }
 
-.legend-group .label {
-  font-size: 0.75rem;
+.checkout-btn {
+  background: var(--primary);
+  color: #fff;
+  border: none;
+  padding: 12px 24px;
+  border-radius: 12px;
   font-weight: 800;
-  text-transform: uppercase;
-  color: #9ca3af;
-  margin-right: 5px;
+  cursor: pointer;
+  transition: all 0.3s;
 }
 
-.legend-item {
-  display: flex;
-  align-items: center;
-  gap: 8px;
-  font-size: 0.875rem;
-  font-weight: 600;
-  color: #4b5563;
-}
+.checkout-btn:hover { background: var(--primary-dark); transform: scale(1.05); }
 
-.dot, .sq {
-  width: 12px;
-  height: 12px;
-  border-radius: 50%;
-}
-
-.sq { border-radius: 3px; }
-
-.dot.available { background: #10b981; }
-.dot.reserved { background: #f59e0b; }
-.dot.sold { background: #ef4444; }
-
-.sq.standard { background: #10b981; }
-.sq.premium { background: #6366f1; }
-.sq.vip { background: #a855f7; }
-
-.map-container-inner {
-  padding: 40px 0;
+.cinema-room {
+  margin: 60px 0;
   display: flex;
   flex-direction: column;
   align-items: center;
 }
 
-.screen {
-  width: 90%;
-  height: 8px;
-  background: linear-gradient(to bottom, #fff, #9ca3af);
-  border-radius: 100px;
-  margin-bottom: 80px;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  color: #9ca3af;
-  font-size: 0.7rem;
-  font-weight: 800;
-  letter-spacing: 1em;
-  box-shadow: 0 15px 40px rgba(255,255,255,0.2);
+.screen-container {
+  width: 80%;
+  margin-bottom: 100px;
+  text-align: center;
   position: relative;
 }
 
-.screen::after {
-  content: '';
+.screen-surface {
+  height: 8px;
+  background: linear-gradient(to right, transparent 0%, #fff 50%, transparent 100%);
+  border-radius: 100px;
+  box-shadow: 0 10px 40px rgba(255,255,255,0.3);
+}
+
+.screen-glow {
   position: absolute;
-  top: 100%;
-  left: 5%;
-  right: 5%;
-  height: 200px;
-  background: linear-gradient(to bottom, rgba(255,255,255,0.1), transparent);
+  top: 0;
+  left: 0;
+  right: 0;
+  height: 150px;
+  background: linear-gradient(to bottom, rgba(255,255,255,0.05) 0%, transparent 100%);
   clip-path: polygon(0 0, 100% 0, 85% 100%, 15% 100%);
   pointer-events: none;
 }
 
+.screen-label {
+  display: block;
+  margin-top: 20px;
+  font-size: 0.75rem;
+  letter-spacing: 0.8em;
+  color: #4b5563;
+  font-weight: 800;
+}
+
 .seats-grid {
   display: grid;
-  grid-template-columns: repeat(5, 50px);
+  grid-template-columns: repeat(8, 1fr);
   gap: 15px;
-  justify-items: center;
 }
 
 .map-footer {
-  margin-top: 40px;
-  padding-top: 30px;
-  border-top: 2px solid #f3f4f6;
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding-top: 40px;
+  border-top: 1px solid rgba(255,255,255,0.05);
 }
+
+.legend-group { display: flex; gap: 30px; }
+.legend-item { display: flex; align-items: center; gap: 10px; font-weight: 700; font-size: 0.85rem; color: #94a3b8; }
+.sw-dot { width: 12px; height: 12px; border-radius: 50%; }
+.sw-dot.available { background: #10b981; }
+.sw-dot.reserved { background: #f59e0b; }
+.sw-dot.sold { background: #ef4444; }
+
+.category-pills { display: flex; gap: 15px; }
+.cat-pill { display: flex; align-items: center; gap: 8px; background: rgba(0,0,0,0.2); padding: 6px 14px; border-radius: 100px; font-size: 0.75rem; font-weight: 700; color: #d1d5db; }
+.cat-pill span { width: 8px; height: 8px; border-radius: 2px; }
+.standard span { background: #10b981; }
+.premium span { background: #6366f1; }
+.vip span { background: #a855f7; }
 
 /* Notifications */
-.notification {
-  position: fixed;
-  bottom: 40px;
-  right: 40px;
-  padding: 16px 24px;
-  border-radius: 12px;
-  color: white;
-  font-weight: 600;
-  z-index: 1000;
-  box-shadow: 0 10px 15px -3px rgba(0, 0, 0, 0.1);
+.notifications-container { position: fixed; bottom: 40px; right: 40px; z-index: 1000; display: flex; flex-direction: column; gap: 10px; }
+.notification-toast { 
+  background: #1e293b; 
+  padding: 16px 24px; 
+  border-radius: 16px; 
+  box-shadow: 0 10px 30px rgba(0,0,0,0.3); 
+  display: flex; 
+  align-items: center; 
+  gap: 15px; 
+  border: 1px solid rgba(255,255,255,0.05);
+  min-width: 300px;
 }
-
-.notification.success { background: #10b981; }
-.notification.error { background: #ef4444; }
-.notification.info { background: #3b82f6; }
+.notification-toast.success { border-left: 4px solid #10b981; }
+.notification-toast.error { border-left: 4px solid #ef4444; }
+.notif-msg { font-weight: 600; font-size: 0.95rem; }
 
 /* Modals */
 .modal-overlay {
   position: fixed;
-  top: 0;
-  left: 0;
-  width: 100%;
-  height: 100%;
-  background: rgba(0,0,0,0.5);
-  backdrop-filter: blur(4px);
+  inset: 0;
+  background: rgba(0,0,0,0.8);
+  backdrop-filter: blur(5px);
   display: flex;
   align-items: center;
   justify-content: center;
@@ -405,176 +452,33 @@ const formattedTimer = computed(() => {
 }
 
 .modal-content {
-  background: white;
+  background: #1e293b;
+  width: 90%;
+  max-width: 450px;
   padding: 40px;
   border-radius: 32px;
-  max-width: 400px;
-  width: 90%;
-  text-align: left;
-  box-shadow: 0 25px 50px -12px rgba(0, 0, 0, 0.25);
+  border: 1px solid rgba(255,255,255,0.05);
 }
 
-.modal-header {
-  margin-bottom: 24px;
-}
+.modal-header { display: flex; gap: 20px; align-items: center; margin-bottom: 30px; }
+.seat-preview { width: 60px; height: 60px; background: #334155; border-radius: 16px; display: flex; align-items: center; justify-content: center; font-size: 1.5rem; font-weight: 800; }
+.seat-preview.standard { background: #10b981; }
+.seat-preview.premium { background: #6366f1; }
+.seat-preview.vip { background: #a855f7; }
 
-.modal-header h3 {
-  margin: 10px 0 0 0;
-  font-size: 1.5rem;
-  font-weight: 800;
-}
+.modal-header h3 { margin: 0; font-size: 1.5rem; }
+.modal-header p { margin: 5px 0 0 0; color: #94a3b8; font-weight: 700; }
 
-.category-badge {
-  font-size: 0.65rem;
-  font-weight: 800;
-  padding: 4px 8px;
-  border-radius: 6px;
-  text-transform: uppercase;
-  color: white;
-}
+.modal-body p { line-height: 1.6; color: #94a3b8; }
 
-.category-badge.standard { background: #10b981; }
-.category-badge.premium { background: #6366f1; }
-.category-badge.vip { background: #a855f7; }
-
-.price-row {
-  display: flex;
-  justify-content: space-between;
-  align-items: center;
-  margin-bottom: 20px;
-  padding: 15px;
-  background: #f9fafb;
-  border-radius: 12px;
-}
-
-.price-row .label { font-weight: 600; color: #6b7280; }
-.price-row .value { font-size: 1.25rem; font-weight: 800; color: #10b981; }
-
-.timer-info {
-  color: #6b7280;
-  font-size: 0.875rem;
-  margin-bottom: 30px;
-}
-
-.modal-actions {
-  display: flex;
-  gap: 15px;
-  margin-top: 30px;
-}
-
-.btn {
-  flex: 1;
-  padding: 12px;
-  border-radius: 12px;
-  font-weight: 700;
-  cursor: pointer;
-  transition: all 0.2s;
-  border: none;
-}
-
-.btn.primary { background: #6366f1; color: white; }
-.btn.primary:hover { background: #4f46e5; }
-.btn.secondary { background: #f3f4f6; color: #4b5563; }
+.modal-footer { display: flex; gap: 15px; margin-top: 40px; }
+.btn-cancel { flex: 1; background: none; border: 1px solid #334155; color: #94a3b8; padding: 14px; border-radius: 14px; font-weight: 700; cursor: pointer; }
+.btn-confirm { flex: 1; background: var(--primary); border: none; color: #fff; padding: 14px; border-radius: 14px; font-weight: 800; cursor: pointer; }
 
 /* Transitions */
-.fade-enter-active, .fade-leave-active { transition: all 0.5s ease; }
-.fade-enter-from, .fade-leave-to { opacity: 0; transform: translateY(20px); }
+.list-enter-active, .list-leave-active { transition: all 0.5s ease; }
+.list-enter-from, .list-leave-to { opacity: 0; transform: translateX(30px); }
 
-.modal-enter-active, .modal-leave-active { transition: opacity 0.3s; }
-.modal-enter-from, .modal-leave-to { opacity: 0; }
-
-/* Purchase Bar */
-.purchase-info-bar {
-  display: flex;
-  align-items: center;
-  gap: 20px;
-  background: #fef3c7;
-  padding: 8px 20px;
-  border-radius: 12px;
-  border: 1px solid #fcd34d;
-  animation: slideIn 0.3s ease-out;
-}
-
-.purchase-info-bar .info {
-  display: flex;
-  align-items: center;
-  gap: 15px;
-  font-size: 0.9rem;
-  color: #92400e;
-}
-
-.timer-badge {
-  background: #f59e0b;
-  color: white;
-  padding: 2px 8px;
-  border-radius: 6px;
-  font-family: monospace;
-  font-weight: 800;
-  box-shadow: 0 2px 4px rgba(0,0,0,0.1);
-}
-
-.pulse {
-  width: 8px;
-  height: 8px;
-  background: #f59e0b;
-  border-radius: 50%;
-  animation: pulse 1.5s infinite;
-}
-
-@keyframes pulse {
-  0% { transform: scale(1); opacity: 1; }
-  50% { transform: scale(1.5); opacity: 0.5; }
-  100% { transform: scale(1); opacity: 1; }
-}
-
-@keyframes slideIn {
-  from { transform: translateX(20px); opacity: 0; }
-  to { transform: translateX(0); opacity: 1; }
-}
-
-.btn-purchase {
-  background: #f59e0b;
-  color: white;
-  border: none;
-  padding: 6px 16px;
-  border-radius: 8px;
-  font-weight: 700;
-  cursor: pointer;
-  transition: all 0.2s;
-}
-
-.btn-purchase:hover {
-  background: #d97706;
-  transform: scale(1.05);
-}
-
-/* Success Modal */
-.success-overlay { background: rgba(16, 185, 129, 0.2); }
-.success-content { text-align: center; }
-.success-icon {
-  width: 60px;
-  height: 60px;
-  background: #10b981;
-  color: white;
-  font-size: 2rem;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  border-radius: 50%;
-  margin: 0 auto 20px;
-}
-
-.ticket-summary {
-  margin: 20px 0;
-  padding: 20px;
-  background: #f9fafb;
-  border-radius: 12px;
-  border: 1px dashed #d1d5db;
-}
-
-.ticket-summary .row {
-  display: flex;
-  justify-content: space-between;
-  margin-bottom: 8px;
-}
+.scale-enter-active, .scale-leave-active { transition: all 0.3s cubic-bezier(0.34, 1.56, 0.64, 1); }
+.scale-enter-from, .scale-leave-to { opacity: 0; transform: scale(0.9); }
 </style>

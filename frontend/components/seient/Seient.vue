@@ -5,24 +5,25 @@
     @click="handleClick"
   >
     <div class="seat-body">
-      <div class="seat-handle left"></div>
+      <div class="seat-base"></div>
       <div class="seat-cushion">
         <span class="seat-id">{{ id }}</span>
       </div>
-      <div class="seat-handle right"></div>
+      <div class="seat-armrest left"></div>
+      <div class="seat-armrest right"></div>
     </div>
     
-    <!-- Hover Info -->
-    <div class="seat-tooltip" v-if="status === 'AVAILABLE'">
+    <!-- Hover Info Tooltip -->
+    <div class="seat-tooltip" v-if="status === 'AVAILABLE' || status === 'available'">
       <span class="cat">{{ category }}</span>
       <span class="price">{{ price }}€</span>
     </div>
 
-    <!-- Status Badge -->
-    <div v-if="status !== 'AVAILABLE' && status !== 'available'" class="status-indicator">
-      <div class="icon" v-if="status.toUpperCase() === 'RESERVED'">🔒</div>
-      <div class="icon" v-if="status.toUpperCase() === 'SELECTED'">⭐</div>
-      <div class="icon" v-if="status.toUpperCase() === 'SOLD'">👤</div>
+    <!-- Status Icons -->
+    <div class="status-icon" v-if="status.toUpperCase() !== 'AVAILABLE'">
+      <span v-if="status.toUpperCase() === 'RESERVED'">🔒</span>
+      <span v-if="status.toUpperCase() === 'SELECTED'">🤩</span>
+      <span v-if="status.toUpperCase() === 'SOLD'">👤</span>
     </div>
   </div>
 </template>
@@ -30,9 +31,9 @@
 <script setup>
 const props = defineProps({
   id: String,
-  category: { type: String, default: 'STANDARD' }, // STANDARD, PREMIUM, VIP
+  category: { type: String, default: 'STANDARD' },
   price: { type: Number, default: 15 },
-  status: { type: String, default: 'available' }, // available, reserved, selected, sold
+  status: { type: String, default: 'available' },
   reservedBy: String,
   expiresAt: String
 })
@@ -49,106 +50,110 @@ const handleClick = () => {
 <style scoped>
 .seat-wrapper {
   position: relative;
-  width: 50px;
-  height: 50px;
+  width: 44px;
+  height: 44px;
   cursor: pointer;
-  perspective: 1000px;
-  transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+  transition: all 0.3s cubic-bezier(0.175, 0.885, 0.32, 1.275);
 }
 
 .seat-body {
   width: 100%;
   height: 100%;
   display: flex;
-  align-items: flex-end;
+  align-items: center;
   justify-content: center;
   position: relative;
 }
 
 .seat-cushion {
-  width: 36px;
-  height: 36px;
-  background: white;
-  border-radius: 8px 8px 4px 4px;
+  width: 30px;
+  height: 32px;
+  background: #334155;
+  border-radius: 8px 8px 12px 12px;
   display: flex;
   align-items: center;
   justify-content: center;
-  box-shadow: 0 4px 0 rgba(0,0,0,0.1);
-  border: 2px solid transparent;
-  transition: all 0.2s;
+  border: 1px solid rgba(255,255,255,0.1);
+  box-shadow: 0 4px 0 rgba(0,0,0,0.3);
+  position: relative;
   z-index: 2;
+  transition: all 0.2s;
 }
 
-.seat-handle {
-  width: 8px;
-  height: 24px;
-  background: #e5e7eb;
+.seat-base {
+  position: absolute;
+  bottom: 0px;
+  width: 36px;
+  height: 10px;
+  background: #1e293b;
   border-radius: 4px;
-  margin-bottom: 2px;
+  z-index: 1;
 }
 
-.seat-handle.left { margin-right: -4px; }
-.seat-handle.right { margin-left: -4px; }
+.seat-armrest {
+  width: 6px;
+  height: 20px;
+  background: #475569;
+  border-radius: 10px;
+  position: absolute;
+  top: 10px;
+}
+
+.seat-armrest.left { left: 0; }
+.seat-armrest.right { right: 0; }
 
 .seat-id {
-  font-size: 0.65rem;
+  font-size: 0.6rem;
   font-weight: 800;
-  color: #6b7280;
-  opacity: 0.8;
+  color: rgba(255,255,255,0.5);
+  transition: color 0.2s;
 }
 
-/* Categories Colors */
-.standard .seat-cushion { background: #10b981; border-color: #059669; }
-.standard .seat-handle { background: #059669; }
-.standard .seat-id { color: white; }
+/* Category Colors */
+.standard .seat-cushion { background: #334155; }
+.standard:hover .seat-cushion { background: #475569; border-color: #10b981; }
 
-.premium .seat-cushion { background: #6366f1; border-color: #4f46e5; }
-.premium .seat-handle { background: #4f46e5; }
-.premium .seat-id { color: white; }
+.premium .seat-cushion { background: #1e1b4b; border-color: rgba(99, 102, 241, 0.3); }
+.premium:hover .seat-cushion { border-color: #6366f1; box-shadow: 0 0 15px rgba(99, 102, 241, 0.3); }
 
 .vip .seat-cushion { 
-  background: linear-gradient(135deg, #a855f7 0%, #7c3aed 100%); 
-  border-color: #6d28d9;
-  box-shadow: 0 4px 10px rgba(168, 85, 247, 0.4);
+  background: linear-gradient(to bottom, #2e1065, #1e1b4b); 
+  border-color: rgba(168, 85, 247, 0.4); 
 }
-.vip .seat-handle { background: #6d28d9; }
-.vip .seat-id { color: white; }
+.vip:hover .seat-cushion { border-color: #a855f7; box-shadow: 0 0 20px rgba(168, 85, 247, 0.3); }
 
 /* Status Styles */
 .selected .seat-cushion { 
-  background: #fbbf24 !important; 
-  border-color: #d97706 !important;
-  box-shadow: 0 0 15px rgba(251, 191, 36, 0.6);
-  z-index: 10;
+  background: #6366f1 !important; 
+  border-color: #fff !important;
+  box-shadow: 0 0 20px rgba(99, 102, 241, 0.6) !important;
 }
-.selected .seat-handle { background: #d97706 !important; }
 
 .reserved .seat-cushion { 
-  background: #9ca3af !important; 
-  border-color: #4b5563 !important;
-  opacity: 0.8;
-}
-.reserved .seat-handle { background: #4b5563 !important; }
-
-.sold .seat-cushion { 
-  background: #ef4444 !important; 
-  border-color: #dc2626 !important;
-  opacity: 0.4;
+  background: #1e293b !important; 
+  opacity: 0.6;
   cursor: not-allowed;
 }
-.sold .seat-handle { background: #dc2626 !important; }
 
-/* Tooltip & Hover */
+.sold .seat-cushion { 
+  background: rgba(15, 23, 42, 0.5) !important;
+  border-color: rgba(255,255,255,0.05) !important;
+  opacity: 0.3;
+  cursor: not-allowed;
+}
+.sold .seat-id { display: none; }
+
+/* Tooltip */
 .seat-tooltip {
   position: absolute;
-  bottom: 120%;
+  bottom: 110%;
   left: 50%;
   transform: translateX(-50%) translateY(10px);
-  background: #1f2937;
-  color: white;
-  padding: 6px 10px;
-  border-radius: 8px;
-  font-size: 0.7rem;
+  background: #fff;
+  color: #000;
+  padding: 8px 12px;
+  border-radius: 12px;
+  font-size: 0.75rem;
   white-space: nowrap;
   opacity: 0;
   visibility: hidden;
@@ -156,15 +161,15 @@ const handleClick = () => {
   display: flex;
   flex-direction: column;
   align-items: center;
-  z-index: 10;
-  box-shadow: 0 10px 15px -3px rgba(0, 0, 0, 0.3);
+  box-shadow: 0 10px 20px rgba(0,0,0,0.4);
+  z-index: 100;
 }
 
-.seat-tooltip .cat { font-weight: 800; text-transform: uppercase; font-size: 0.6rem; margin-bottom: 2px; }
-.seat-tooltip .price { color: #34d399; font-weight: 700; }
+.seat-tooltip .cat { font-weight: 800; text-transform: uppercase; font-size: 0.6rem; color: #64748b; }
+.seat-tooltip .price { font-weight: 800; color: #10b981; }
 
 .seat-wrapper:hover:not(.sold):not(.reserved) {
-  transform: translateY(-5px) scale(1.1);
+  transform: scale(1.15) translateY(-5px);
 }
 
 .seat-wrapper:hover .seat-tooltip {
@@ -173,12 +178,11 @@ const handleClick = () => {
   transform: translateX(-50%) translateY(0);
 }
 
-/* Status Indicator */
-.status-indicator {
+.status-icon {
   position: absolute;
-  top: -5px;
-  right: -5px;
-  z-index: 5;
-  font-size: 0.8rem;
+  top: -8px;
+  right: -8px;
+  font-size: 0.9rem;
+  z-index: 10;
 }
 </style>
