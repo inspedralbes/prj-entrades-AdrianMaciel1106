@@ -145,6 +145,34 @@ function reserveSeat(eventId, id, userId, ttlMs = 3 * 60 * 1000, io = null) {
 }
 
 /**
+ * Release a reserved seat.
+ * @param {string} eventId
+ * @param {string} id
+ * @param {string} userId
+ * @returns {{ success: boolean, seat?: Seat, error?: string }}
+ */
+function releaseSeat(eventId, id, userId) {
+  const eventSeats = seatsByEvent.get(eventId);
+  if (!eventSeats) return { success: false, error: `Event ${eventId} not found` };
+
+  const seat = eventSeats.get(id);
+  if (!seat) return { success: false, error: `Seat ${id} not found in event ${eventId}` };
+
+  if (seat.status !== SEAT_STATUS.RESERVED) {
+    return { success: false, error: `Seat ${id} is not reserved` };
+  }
+  if (seat.reservedBy !== userId) {
+    return { success: false, error: `Seat ${id} is reserved by a different user` };
+  }
+
+  seat.status     = SEAT_STATUS.AVAILABLE;
+  seat.reservedBy = null;
+  seat.expiresAt  = null;
+
+  return { success: true, seat };
+}
+
+/**
  * Confirm (sell) a seat that is currently RESERVED by the same user.
  * - Validates: seat exists, status is RESERVED, reservedBy matches, not expired.
  * - On success: status → SOLD, clears expiresAt.
@@ -214,6 +242,7 @@ export {
   getSeat,
   getAllSeats,
   reserveSeat,
+  releaseSeat,
   confirmPurchase,
   releaseExpiredReservations,
   deleteSeats

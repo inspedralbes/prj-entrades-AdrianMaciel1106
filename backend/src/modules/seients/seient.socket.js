@@ -4,6 +4,7 @@
 
 import {
   reserveSeat,
+  releaseSeat,
   confirmPurchase,
   getAllSeats,
   serializeSeat,
@@ -38,6 +39,22 @@ function registerSeatEvents(socket, io) {
     if (result.success) {
       io.to(eventId).emit('seat_updated', serializeSeat(result.seat));
     }
+  });
+
+  // release_seat
+  socket.on('release_seat', ({ eventId, seatId, userId } = {}) => {
+    if (!eventId || !seatId || !userId) return;
+
+    const result = releaseSeat(eventId, seatId, userId);
+    
+    if (result.success) {
+      io.to(eventId).emit('seat_updated', serializeSeat(result.seat));
+    }
+    
+    socket.emit('release_seat_response', {
+      success: result.success,
+      error:   result.error,
+    });
   });
 
   // confirm_purchase

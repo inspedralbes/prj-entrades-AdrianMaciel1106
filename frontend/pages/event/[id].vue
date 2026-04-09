@@ -30,6 +30,64 @@
       </div>
     </header>
 
+    <!-- Panel lateral flotant de compra -->
+    <Transition name="panel-slide">
+      <div v-if="eventStore.selectedSeats.length > 0" class="purchase-panel">
+        <div class="panel-header">
+          <div class="panel-title">
+            <svg width="20" height="20" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 5v2m0 4v2m0 4v2M5 5a2 2 0 00-2 2v3a2 2 0 110 4v3a2 2 0 002 2h14a2 2 0 002-2v-3a2 2 0 110-4V7a2 2 0 00-2-2H5z"/></svg>
+            La teva selecció
+          </div>
+          <div class="panel-timer" :class="{ urgent: eventStore.timer < 60 }">
+            <svg width="14" height="14" fill="none" stroke="currentColor" viewBox="0 0 24 24"><circle cx="12" cy="12" r="10"/><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 6v6l4 2"/></svg>
+            {{ formattedTimer }}
+          </div>
+        </div>
+
+        <div class="panel-seats">
+          <div v-for="seat in eventStore.selectedSeats" :key="seat.id" class="panel-seat-row">
+            <div class="seat-badge" :class="seat.category?.toLowerCase() || 'standard'">
+              {{ seat.row }}{{ seat.number }}
+            </div>
+            <div class="seat-info">
+              <span class="seat-label">Seient {{ seat.row }}-{{ seat.number }}</span>
+              <span class="seat-cat">{{ seat.category || 'Estàndard' }}</span>
+            </div>
+            <span class="seat-price">{{ seat.price }}€</span>
+            <button class="remove-seat-btn" @click="eventStore.unreserveSeat(seat.id)" title="Eliminar seient">
+              <svg width="18" height="18" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16"></path></svg>
+            </button>
+          </div>
+        </div>
+
+        <div class="panel-divider"></div>
+
+        <div class="panel-summary">
+          <div class="summary-row">
+            <span>Subtotal</span>
+            <span>{{ eventStore.totalAmount.toFixed(2) }}€</span>
+          </div>
+          <div class="summary-row charges">
+            <span>Càrrecs de gestió</span>
+            <span>{{ (eventStore.selectedSeats.length * 0.50).toFixed(2) }}€</span>
+          </div>
+          <div class="summary-row total">
+            <span>Total</span>
+            <span class="total-price">{{ (eventStore.totalAmount + eventStore.selectedSeats.length * 0.50).toFixed(2) }}€</span>
+          </div>
+        </div>
+
+        <button class="panel-checkout-btn" @click="goToCheckout">
+          <svg width="18" height="18" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M3 10h18M7 15h1m4 0h1m-7 4h12a3 3 0 003-3V8a3 3 0 00-3-3H6a3 3 0 00-3 3v8a3 3 0 003 3z"/></svg>
+          Confirmar i pagar
+        </button>
+
+        <p class="panel-expiry-note">
+          La reserva expira en <strong>{{ formattedTimer }}</strong>. Completa el pagament a temps.
+        </p>
+      </div>
+    </Transition>
+
     <div class="booking-section">
       <div class="map-container">
         <div class="map-header">
@@ -37,15 +95,9 @@
             <h2>Selecciona els teus seients</h2>
             <p>Fes clic a un seient disponible per començar la reserva.</p>
           </div>
-          
-          <div class="timer-card" v-if="eventStore.selectedSeats.length > 0">
-            <div class="timer-content">
-              <span class="timer-label">{{ eventStore.selectedSeats.length }} seient(s) | Expira en:</span>
-              <span class="timer-value">{{ formattedTimer }}</span>
-            </div>
-            <button class="checkout-btn" @click="goToCheckout">
-              Pagar {{ eventStore.totalAmount }}€
-            </button>
+          <div v-if="eventStore.selectedSeats.length > 0" class="seats-count-badge">
+            <span class="count-num">{{ eventStore.selectedSeats.length }}</span>
+            <span class="count-text">seient{{ eventStore.selectedSeats.length > 1 ? 's' : '' }} seleccionat{{ eventStore.selectedSeats.length > 1 ? 's' : '' }}</span>
           </div>
         </div>
 
@@ -129,8 +181,13 @@ onUnmounted(() => {
 
 const handleSelectSeat = (id) => {
   const seat = seats.value.find(s => s.id === id)
+  console.log('Seient clicat:', id, 'Estat actual:', seat?.status)
   if (seat && (seat.status === 'AVAILABLE' || seat.status === 'available')) {
+    console.log('Enviant reserva de seient al servidor...')
     eventStore.reserveSeat(seat.id)
+  } else if (seat && seat.status === 'selected') {
+    console.log('Desfent la selecció del seient...')
+    eventStore.unreserveSeat(seat.id)
   }
 }
 
@@ -295,32 +352,259 @@ const getNotifIcon = (type) => {
 .title-area h2 { margin: 0; font-size: 1.8rem; font-weight: 800; }
 .title-area p { margin: 5px 0 0 0; color: #64748b; font-weight: 600; }
 
-.timer-card {
+/* Badge seients seleccionats al header del mapa */
+.seats-count-badge {
   display: flex;
-  background: #0f172a;
-  padding: 8px 10px 8px 20px;
-  border-radius: 18px;
   align-items: center;
-  gap: 20px;
-  border: 1px solid var(--primary);
-  box-shadow: 0 0 20px rgba(99, 102, 241, 0.2);
+  gap: 10px;
+  background: rgba(99, 102, 241, 0.15);
+  border: 1px solid rgba(99, 102, 241, 0.4);
+  padding: 8px 18px;
+  border-radius: 100px;
+  animation: pulse-border 2s ease-in-out infinite;
+}
+.count-num {
+  font-size: 1.4rem;
+  font-weight: 900;
+  color: #6366f1;
+  line-height: 1;
+}
+.count-text {
+  font-size: 0.8rem;
+  font-weight: 700;
+  color: #94a3b8;
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+}
+@keyframes pulse-border {
+  0%, 100% { box-shadow: 0 0 0 0 rgba(99,102,241,0.3); }
+  50% { box-shadow: 0 0 0 6px rgba(99,102,241,0); }
 }
 
-.timer-label { font-size: 0.8rem; font-weight: 700; color: #94a3b8; }
-.timer-value { font-family: monospace; font-size: 1.4rem; font-weight: 800; color: #fff; }
+/* ═══════════════════════════════════
+   PANEL LATERAL FLOTANT DE COMPRA
+═══════════════════════════════════ */
+.purchase-panel {
+  position: fixed;
+  top: 50%;
+  right: 0;
+  transform: translateY(-50%) translateX(0);
+  width: 320px;
+  background: #0f172a;
+  border: 1px solid rgba(99, 102, 241, 0.3);
+  border-right: none;
+  border-radius: 28px 0 0 28px;
+  padding: 28px;
+  z-index: 9999;
+  box-shadow: -20px 0 60px rgba(0,0,0,0.5), 0 0 40px rgba(99,102,241,0.15);
+  display: flex;
+  flex-direction: column;
+  gap: 20px;
+  max-height: 90vh;
+  overflow-y: auto;
+}
 
-.checkout-btn {
-  background: var(--primary);
+.panel-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+}
+
+.panel-title {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  font-size: 1rem;
+  font-weight: 800;
+  color: #e2e8f0;
+}
+
+.panel-timer {
+  display: flex;
+  align-items: center;
+  gap: 5px;
+  font-family: monospace;
+  font-size: 0.95rem;
+  font-weight: 800;
+  color: #10b981;
+  background: rgba(16, 185, 129, 0.1);
+  border: 1px solid rgba(16, 185, 129, 0.3);
+  padding: 4px 10px;
+  border-radius: 8px;
+  transition: all 0.4s;
+}
+
+.panel-timer.urgent {
+  color: #ef4444;
+  background: rgba(239, 68, 68, 0.1);
+  border-color: rgba(239, 68, 68, 0.3);
+  animation: blink 1s ease-in-out infinite;
+}
+
+@keyframes blink {
+  0%, 100% { opacity: 1; }
+  50% { opacity: 0.5; }
+}
+
+.panel-seats {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+}
+
+.panel-seat-row {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  background: rgba(255,255,255,0.03);
+  border: 1px solid rgba(255,255,255,0.06);
+  padding: 10px 14px;
+  border-radius: 14px;
+  transition: background 0.2s;
+}
+
+.panel-seat-row:hover {
+  background: rgba(255,255,255,0.06);
+}
+
+.seat-badge {
+  width: 38px;
+  height: 38px;
+  border-radius: 10px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 0.7rem;
+  font-weight: 900;
+  color: #fff;
+  flex-shrink: 0;
+  letter-spacing: -0.02em;
+}
+.seat-badge.standard { background: linear-gradient(135deg, #10b981, #059669); }
+.seat-badge.premium  { background: linear-gradient(135deg, #6366f1, #4f46e5); }
+.seat-badge.vip      { background: linear-gradient(135deg, #a855f7, #7c3aed); }
+
+.seat-info {
+  display: flex;
+  flex-direction: column;
+  flex: 1;
+  gap: 2px;
+}
+.seat-label { font-size: 0.85rem; font-weight: 700; color: #e2e8f0; }
+.seat-cat   { font-size: 0.72rem; font-weight: 600; color: #64748b; text-transform: uppercase; letter-spacing: 0.04em; }
+
+.seat-price {
+  font-size: 0.95rem;
+  font-weight: 800;
+  color: #6366f1;
+}
+
+.remove-seat-btn {
+  background: rgba(239, 68, 68, 0.1);
+  border: 1px solid transparent;
+  color: #ef4444;
+  width: 32px;
+  height: 32px;
+  border-radius: 8px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  cursor: pointer;
+  transition: all 0.2s;
+  margin-left: 5px;
+}
+
+.remove-seat-btn:hover {
+  background: #ef4444;
+  color: #fff;
+  border-color: #ef4444;
+  transform: scale(1.05);
+}
+
+.panel-divider {
+  height: 1px;
+  background: linear-gradient(to right, transparent, rgba(255,255,255,0.1), transparent);
+}
+
+.panel-summary {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+
+.summary-row {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  font-size: 0.85rem;
+  font-weight: 600;
+  color: #94a3b8;
+}
+.summary-row.charges { color: #64748b; font-size: 0.8rem; }
+.summary-row.total {
+  margin-top: 6px;
+  padding-top: 10px;
+  border-top: 1px dashed rgba(255,255,255,0.08);
+  font-size: 1rem;
+  font-weight: 800;
+  color: #e2e8f0;
+}
+.total-price {
+  font-size: 1.4rem;
+  font-weight: 900;
+  background: linear-gradient(135deg, #6366f1, #a855f7);
+  -webkit-background-clip: text;
+  -webkit-text-fill-color: transparent;
+  background-clip: text;
+}
+
+.panel-checkout-btn {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 10px;
+  width: 100%;
+  background: linear-gradient(135deg, #6366f1, #8b5cf6);
   color: #fff;
   border: none;
-  padding: 12px 24px;
-  border-radius: 12px;
+  padding: 16px;
+  border-radius: 16px;
+  font-size: 1rem;
   font-weight: 800;
   cursor: pointer;
   transition: all 0.3s;
+  box-shadow: 0 8px 24px rgba(99,102,241,0.4);
+  letter-spacing: 0.01em;
 }
 
-.checkout-btn:hover { background: var(--primary-dark); transform: scale(1.05); }
+.panel-checkout-btn:hover {
+  transform: translateY(-2px);
+  box-shadow: 0 12px 32px rgba(99,102,241,0.6);
+}
+
+.panel-checkout-btn:active {
+  transform: translateY(0);
+}
+
+.panel-expiry-note {
+  text-align: center;
+  font-size: 0.72rem;
+  color: #475569;
+  margin: 0;
+  line-height: 1.5;
+}
+.panel-expiry-note strong { color: #94a3b8; }
+
+/* Animació d'entrada/sortida */
+.panel-slide-enter-active,
+.panel-slide-leave-active {
+  transition: transform 0.4s cubic-bezier(0.34, 1.56, 0.64, 1), opacity 0.4s ease-out;
+}
+.panel-slide-enter-from,
+.panel-slide-leave-to {
+  transform: translateY(-50%) translateX(100%);
+  opacity: 0;
+}
 
 .cinema-room {
   margin: 60px 0;

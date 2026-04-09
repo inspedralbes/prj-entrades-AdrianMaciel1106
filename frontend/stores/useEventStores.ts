@@ -7,10 +7,11 @@ export interface Seat {
   id: string
   row: string
   number: number
-  status: SeatStatus
+  status: SeatStatus | string
   price: number
   reservedBy?: string
-  expiresAt?: number
+  expiresAt?: string | number | null
+  category?: string
 }
 
 export interface EventInfo {
@@ -35,9 +36,11 @@ export const useEventStore = defineStore('event', () => {
   const lastNotification = ref<{ message: string, type: 'info' | 'success' | 'error' } | null>(null)
 
   // Getters
-  const availableSeats = computed(() => seats.value.filter(s => s.status === 'available'))
+  const availableSeats = computed(() => seats.value.filter(s => s.status.toLowerCase() === 'available'))
   const selectedSeats = computed(() => seats.value.filter(s => s.status === 'selected'))
-  const totalAmount = computed(() => selectedSeats.value.reduce((total, seat) => total + seat.price, 0))
+  const totalAmount = computed(() => {
+    return selectedSeats.value.reduce((total, seat) => total + (seat.price || 0), 0)
+  })
 
   // Accions
   function setEventInfo(info: EventInfo) {
@@ -77,46 +80,49 @@ export const useEventStore = defineStore('event', () => {
     })
 
     $socket.on('all_seats', ({ seats: newSeats }: { seats: Seat[] }) => {
-      // Mapegem seients del servidor al nostre format 'selected' si és el nostre
-      const mappedSeats = newSeats.map(s => ({
-        ...s,
-        status: (s.status === 'reserved' && s.reservedBy === userId.value) ? 'selected' : s.status
-      }))
+      console.log('[store] Rebuts seients:', newSeats.length)
+      const mappedSeats = newSeats.map(s => {
+        const isMe = s.reservedBy === userId.value
+        // Suport per uppercase del servidor (RESERVED)
+        const status = (s.status.toUpperCase() === 'RESERVED' && isMe) ? 'selected' : s.status
+        return { ...s, status }
+      })
       setSeats(mappedSeats as Seat[])
       
-      // Si el client ja té seients reservats, iniciem el temporitzador
       const mySeat = mappedSeats.find(s => s.status === 'selected')
       if (mySeat && mySeat.expiresAt) {
-        const remaining = Math.floor((mySeat.expiresAt - Date.now()) / 1000)
+        const expTime = typeof mySeat.expiresAt === 'string' ? new Date(mySeat.expiresAt).getTime() : mySeat.expiresAt
+        const remaining = Math.floor((expTime - Date.now()) / 1000)
         if (remaining > 0) startTimer(remaining)
       }
     })
 
     $socket.on('seat_updated', (updatedSeat: Seat) => {
+      console.log('[store] Seat actualitzat:', updatedSeat.id, updatedSeat.status)
       const isMe = updatedSeat.reservedBy === userId.value
-      const status = (updatedSeat.status === 'reserved' && isMe) 
+      const status = (updatedSeat.status.toUpperCase() === 'RESERVED' && isMe) 
         ? 'selected' 
         : updatedSeat.status
       
       const oldSeat = seats.value.find(s => s.id === updatedSeat.id)
       
-      updateSeatStatus(updatedSeat.id, status as SeatStatus, updatedSeat.reservedBy, updatedSeat.expiresAt)
+      updateSeatStatus(updatedSeat.id, status as SeatStatus, updatedSeat.reservedBy, updatedSeat.expiresAt as string)
       
-      // Notificació per activitat externa
       if (!isMe && oldSeat && oldSeat.status !== updatedSeat.status) {
-        if (updatedSeat.status === 'reserved') {
+        if (updatedSeat.status.toUpperCase() === 'RESERVED') {
           showNotification(`El seient ${updatedSeat.id} s'acaba de reservar!`, 'info')
-        } else if (updatedSeat.status === 'sold') {
+        } else if (updatedSeat.status.toUpperCase() === 'SOLD') {
           showNotification(`Seient ${updatedSeat.id} venut.`, 'info')
-        } else if (updatedSeat.status === 'available' && oldSeat.status !== 'available') {
+        } else if (updatedSeat.status.toUpperCase() === 'AVAILABLE' && oldSeat.status !== 'AVAILABLE') {
           showNotification(`El seient ${updatedSeat.id} torna a estar disponible.`, 'success')
         }
       }
 
       if (status === 'selected' && updatedSeat.expiresAt) {
-        const remaining = Math.floor((updatedSeat.expiresAt - Date.now()) / 1000)
+        const expTime = typeof updatedSeat.expiresAt === 'string' ? new Date(updatedSeat.expiresAt).getTime() : updatedSeat.expiresAt
+        const remaining = Math.floor((expTime - Date.now()) / 1000)
         startTimer(remaining)
-      } else if (status === 'available' && isMe) {
+      } else if ((status.toUpperCase() === 'AVAILABLE' || status === 'available') && isMe) {
         stopTimer()
       }
     })
@@ -140,6 +146,15 @@ export const useEventStore = defineStore('event', () => {
   function reserveSeat(seatId: string) {
     if (!$socket || !eventInfo.value) return
     $socket.emit('reserve_seat', { 
+      eventId: eventInfo.value.id, 
+      seatId, 
+      userId: userId.value 
+    })
+  }
+
+  function unreserveSeat(seatId: string) {
+    if (!$socket || !eventInfo.value) return
+    $socket.emit('release_seat', { 
       eventId: eventInfo.value.id, 
       seatId, 
       userId: userId.value 
@@ -209,6 +224,7 @@ export const useEventStore = defineStore('event', () => {
     initSocket,
     showNotification,
     reserveSeat,
+    unreserveSeat,
     confirmPurchase,
     startTimer,
     stopTimer,

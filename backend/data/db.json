@@ -199,16 +199,6 @@
       "backdrop": "https://image.tmdb.org/t/p/original/v0NEB75SZjxY8GS3ho8WeEvjIT3.jpg",
       "sinopsi": "",
       "rating": 4.991
-    },
-    {
-      "id": "evt_1775728336053",
-      "nom": "nigger",
-      "data": "2026-04-09",
-      "lloc": "Cinema Pedralbes",
-      "imatge": "/images/default.png",
-      "backdrop": "",
-      "sinopsi": "",
-      "rating": 8
     }
   ],
   "seats": {
@@ -4595,36 +4585,36 @@
         "eventId": "1327819",
         "category": "STANDARD",
         "price": 9.5,
-        "status": "RESERVED",
-        "reservedBy": "user_ho3rbycd7",
-        "expiresAt": "2026-04-09T09:54:20.471Z"
+        "status": "AVAILABLE",
+        "reservedBy": null,
+        "expiresAt": null
       },
       {
         "id": "A5",
         "eventId": "1327819",
         "category": "STANDARD",
         "price": 9.5,
-        "status": "RESERVED",
-        "reservedBy": "user_ho3rbycd7",
-        "expiresAt": "2026-04-09T09:54:24.842Z"
+        "status": "AVAILABLE",
+        "reservedBy": null,
+        "expiresAt": null
       },
       {
         "id": "A6",
         "eventId": "1327819",
         "category": "STANDARD",
         "price": 9.5,
-        "status": "RESERVED",
-        "reservedBy": "user_ho3rbycd7",
-        "expiresAt": "2026-04-09T09:54:26.222Z"
+        "status": "AVAILABLE",
+        "reservedBy": null,
+        "expiresAt": null
       },
       {
         "id": "A7",
         "eventId": "1327819",
         "category": "STANDARD",
         "price": 9.5,
-        "status": "RESERVED",
-        "reservedBy": "user_ho3rbycd7",
-        "expiresAt": "2026-04-09T09:54:27.714Z"
+        "status": "AVAILABLE",
+        "reservedBy": null,
+        "expiresAt": null
       },
       {
         "id": "A8",
@@ -4802,9 +4792,9 @@
         "eventId": "1327819",
         "category": "VIP",
         "price": 18,
-        "status": "RESERVED",
-        "reservedBy": "user_ho3rbycd7",
-        "expiresAt": "2026-04-09T09:54:33.426Z"
+        "status": "AVAILABLE",
+        "reservedBy": null,
+        "expiresAt": null
       },
       {
         "id": "D4",
@@ -6005,296 +5995,6 @@
       {
         "id": "D8",
         "eventId": "1653994",
-        "category": "VIP",
-        "price": 18,
-        "status": "AVAILABLE",
-        "reservedBy": null,
-        "expiresAt": null
-      }
-    ],
-    "evt_1775728336053": [
-      {
-        "id": "A1",
-        "eventId": "evt_1775728336053",
-        "category": "STANDARD",
-        "price": 9.5,
-        "status": "AVAILABLE",
-        "reservedBy": null,
-        "expiresAt": null
-      },
-      {
-        "id": "A2",
-        "eventId": "evt_1775728336053",
-        "category": "STANDARD",
-        "price": 9.5,
-        "status": "AVAILABLE",
-        "reservedBy": null,
-        "expiresAt": null
-      },
-      {
-        "id": "A3",
-        "eventId": "evt_1775728336053",
-        "category": "STANDARD",
-        "price": 9.5,
-        "status": "AVAILABLE",
-        "reservedBy": null,
-        "expiresAt": null
-      },
-      {
-        "id": "A4",
-        "eventId": "evt_1775728336053",
-        "category": "STANDARD",
-        "price": 9.5,
-        "status": "AVAILABLE",
-        "reservedBy": null,
-        "expiresAt": null
-      },
-      {
-        "id": "A5",
-        "eventId": "evt_1775728336053",
-        "category": "STANDARD",
-        "price": 9.5,
-        "status": "AVAILABLE",
-        "reservedBy": null,
-        "expiresAt": null
-      },
-      {
-        "id": "A6",
-        "eventId": "evt_1775728336053",
-        "category": "STANDARD",
-        "price": 9.5,
-        "status": "AVAILABLE",
-        "reservedBy": null,
-        "expiresAt": null
-      },
-      {
-        "id": "A7",
-        "eventId": "evt_1775728336053",
-        "category": "STANDARD",
-        "price": 9.5,
-        "status": "AVAILABLE",
-        "reservedBy": null,
-        "expiresAt": null
-      },
-      {
-        "id": "A8",
-        "eventId": "evt_1775728336053",
-        "category": "STANDARD",
-        "price": 9.5,
-        "status": "AVAILABLE",
-        "reservedBy": null,
-        "expiresAt": null
-      },
-      {
-        "id": "B1",
-        "eventId": "evt_1775728336053",
-        "category": "STANDARD",
-        "price": 9.5,
-        "status": "AVAILABLE",
-        "reservedBy": null,
-        "expiresAt": null
-      },
-      {
-        "id": "B2",
-        "eventId": "evt_1775728336053",
-        "category": "STANDARD",
-        "price": 9.5,
-        "status": "AVAILABLE",
-        "reservedBy": null,
-        "expiresAt": null
-      },
-      {
-        "id": "B3",
-        "eventId": "evt_1775728336053",
-        "category": "STANDARD",
-        "price": 9.5,
-        "status": "AVAILABLE",
-        "reservedBy": null,
-        "expiresAt": null
-      },
-      {
-        "id": "B4",
-        "eventId": "evt_1775728336053",
-        "category": "STANDARD",
-        "price": 9.5,
-        "status": "AVAILABLE",
-        "reservedBy": null,
-        "expiresAt": null
-      },
-      {
-        "id": "B5",
-        "eventId": "evt_1775728336053",
-        "category": "STANDARD",
-        "price": 9.5,
-        "status": "AVAILABLE",
-        "reservedBy": null,
-        "expiresAt": null
-      },
-      {
-        "id": "B6",
-        "eventId": "evt_1775728336053",
-        "category": "STANDARD",
-        "price": 9.5,
-        "status": "AVAILABLE",
-        "reservedBy": null,
-        "expiresAt": null
-      },
-      {
-        "id": "B7",
-        "eventId": "evt_1775728336053",
-        "category": "STANDARD",
-        "price": 9.5,
-        "status": "AVAILABLE",
-        "reservedBy": null,
-        "expiresAt": null
-      },
-      {
-        "id": "B8",
-        "eventId": "evt_1775728336053",
-        "category": "STANDARD",
-        "price": 9.5,
-        "status": "AVAILABLE",
-        "reservedBy": null,
-        "expiresAt": null
-      },
-      {
-        "id": "C1",
-        "eventId": "evt_1775728336053",
-        "category": "PREMIUM",
-        "price": 12,
-        "status": "AVAILABLE",
-        "reservedBy": null,
-        "expiresAt": null
-      },
-      {
-        "id": "C2",
-        "eventId": "evt_1775728336053",
-        "category": "PREMIUM",
-        "price": 12,
-        "status": "AVAILABLE",
-        "reservedBy": null,
-        "expiresAt": null
-      },
-      {
-        "id": "C3",
-        "eventId": "evt_1775728336053",
-        "category": "PREMIUM",
-        "price": 12,
-        "status": "AVAILABLE",
-        "reservedBy": null,
-        "expiresAt": null
-      },
-      {
-        "id": "C4",
-        "eventId": "evt_1775728336053",
-        "category": "PREMIUM",
-        "price": 12,
-        "status": "AVAILABLE",
-        "reservedBy": null,
-        "expiresAt": null
-      },
-      {
-        "id": "C5",
-        "eventId": "evt_1775728336053",
-        "category": "PREMIUM",
-        "price": 12,
-        "status": "AVAILABLE",
-        "reservedBy": null,
-        "expiresAt": null
-      },
-      {
-        "id": "C6",
-        "eventId": "evt_1775728336053",
-        "category": "PREMIUM",
-        "price": 12,
-        "status": "AVAILABLE",
-        "reservedBy": null,
-        "expiresAt": null
-      },
-      {
-        "id": "C7",
-        "eventId": "evt_1775728336053",
-        "category": "PREMIUM",
-        "price": 12,
-        "status": "AVAILABLE",
-        "reservedBy": null,
-        "expiresAt": null
-      },
-      {
-        "id": "C8",
-        "eventId": "evt_1775728336053",
-        "category": "PREMIUM",
-        "price": 12,
-        "status": "AVAILABLE",
-        "reservedBy": null,
-        "expiresAt": null
-      },
-      {
-        "id": "D1",
-        "eventId": "evt_1775728336053",
-        "category": "VIP",
-        "price": 18,
-        "status": "AVAILABLE",
-        "reservedBy": null,
-        "expiresAt": null
-      },
-      {
-        "id": "D2",
-        "eventId": "evt_1775728336053",
-        "category": "VIP",
-        "price": 18,
-        "status": "AVAILABLE",
-        "reservedBy": null,
-        "expiresAt": null
-      },
-      {
-        "id": "D3",
-        "eventId": "evt_1775728336053",
-        "category": "VIP",
-        "price": 18,
-        "status": "AVAILABLE",
-        "reservedBy": null,
-        "expiresAt": null
-      },
-      {
-        "id": "D4",
-        "eventId": "evt_1775728336053",
-        "category": "VIP",
-        "price": 18,
-        "status": "AVAILABLE",
-        "reservedBy": null,
-        "expiresAt": null
-      },
-      {
-        "id": "D5",
-        "eventId": "evt_1775728336053",
-        "category": "VIP",
-        "price": 18,
-        "status": "AVAILABLE",
-        "reservedBy": null,
-        "expiresAt": null
-      },
-      {
-        "id": "D6",
-        "eventId": "evt_1775728336053",
-        "category": "VIP",
-        "price": 18,
-        "status": "AVAILABLE",
-        "reservedBy": null,
-        "expiresAt": null
-      },
-      {
-        "id": "D7",
-        "eventId": "evt_1775728336053",
-        "category": "VIP",
-        "price": 18,
-        "status": "AVAILABLE",
-        "reservedBy": null,
-        "expiresAt": null
-      },
-      {
-        "id": "D8",
-        "eventId": "evt_1775728336053",
         "category": "VIP",
         "price": 18,
         "status": "AVAILABLE",
