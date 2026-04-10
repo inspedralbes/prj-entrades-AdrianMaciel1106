@@ -20,8 +20,11 @@
 
 import { io as ioc } from 'socket.io-client';
 
+import fetch from 'node-fetch';
+
 const SERVER_URL = 'http://localhost:3001';
-const EVENT_ID   = '101';
+// EVENT_ID will be set dynamically
+let EVENT_ID   = null;
 const SEAT_ID    = 'A1';
 const TTL_MS     = 3 * 60 * 1000; // must match server TTL
 
@@ -62,6 +65,20 @@ async function wait(ms) {
 
 async function run() {
   log('test', '=== Concurrency test starting ===');
+  
+  try {
+    const res = await fetch(`${SERVER_URL}/api/events`);
+    const data = await res.json();
+    if (!data.events || data.events.length === 0) {
+      log('test', 'ERROR: No events found on server.');
+      process.exit(1);
+    }
+    EVENT_ID = data.events[0].id;
+    log('test', `Fetched dynamic target Event ID: ${EVENT_ID}`);
+  } catch (err) {
+    log('test', `Failed to fetch events from server: ${err.message}`);
+    process.exit(1);
+  }
   log('test', `Target seat: ${SEAT_ID}  |  TTL: ${TTL_MS / 1000}s`);
   log('test', '');
 

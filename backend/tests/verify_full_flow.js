@@ -1,13 +1,23 @@
 import { io as ioc } from 'socket.io-client';
 
+import fetch from 'node-fetch';
+
 const SERVER_URL = 'http://localhost:3001';
-const EVENT_ID = '101';
+let EVENT_ID = null;
 const SEAT_ID = 'C1';
 const USER_ID = `test_user_${Math.random().toString(36).substr(2, 5)}`;
 
 async function verifyFullFlow() {
   console.log(`--- Iniciant Prova de Flux Complet: ${SEAT_ID} ---`);
-  
+
+  const res = await fetch(`${SERVER_URL}/api/events`);
+  const data = await res.json();
+  if (!data.events || data.events.length === 0) {
+    console.error('ERROR: No events found.');
+    process.exit(1);
+  }
+  EVENT_ID = data.events[0].id;
+
   const client = ioc(SERVER_URL);
 
   return new Promise((resolve, reject) => {

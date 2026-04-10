@@ -5,9 +5,10 @@
  * Reserving a seat in Event 1 should NOT notify or affect Event 2.
  */
 
-const { io: ioc } = require('socket.io-client');
+import { io as ioc } from 'socket.io-client';
+import fetch from 'node-fetch';
 
-const SERVER_URL = 'http://localhost:3000';
+const SERVER_URL = 'http://localhost:3001';
 
 async function wait(ms) {
   return new Promise((resolve) => setTimeout(resolve, ms));
@@ -16,6 +17,15 @@ async function wait(ms) {
 async function run() {
   console.log('=== Multi-Event Isolation Test ===');
 
+  const res = await fetch(`${SERVER_URL}/api/events`);
+  const data = await res.json();
+  if (!data.events || data.events.length < 2) {
+    console.error('ERROR: Need at least 2 events.');
+    process.exit(1);
+  }
+  const EVENT_1 = data.events[0].id;
+  const EVENT_2 = data.events[1].id;
+
   const socketEv1 = ioc(SERVER_URL, { transports: ['websocket'] });
   const socketEv2 = ioc(SERVER_URL, { transports: ['websocket'] });
 
@@ -23,12 +33,12 @@ async function run() {
 
   socketEv1.on('connect', () => {
     console.log('[Ev1] Connected');
-    socketEv1.emit('join_event', { eventId: '1' });
+    socketEv1.emit('join_event', { eventId: EVENT_1 });
   });
 
   socketEv2.on('connect', () => {
     console.log('[Ev2] Connected');
-    socketEv2.emit('join_event', { eventId: '2' });
+    socketEv2.emit('join_event', { eventId: EVENT_2 });
   });
 
   socketEv2.on('seat_updated', (seat) => {
@@ -39,7 +49,7 @@ async function run() {
   await wait(1000);
 
   console.log('[Ev1] Reserving A1...');
-  socketEv1.emit('reserve_seat', { eventId: '1', seatId: 'A1', userId: 'User1' });
+  socketEv1.emit('reserve_seat', { eventId: EVENT_1, seatId: 'A1', userId: 'User1' });
 
   await new Promise((resolve) => {
     socketEv1.once('reserve_seat_response', (res) => {
@@ -57,7 +67,7 @@ async function run() {
   }
 
   console.log('[Ev2] Checking if A1 is available in Event 2...');
-  socketEv2.emit('get_all_seats', { eventId: '2' });
+  socketEv2.emit('get_all_seats', { eventId: EVENT_2 });
   await new Promise((resolve) => {
     socketEv2.once('all_seats', ({ seats }) => {
       const a1 = seats.find(s => s.id === 'A1');

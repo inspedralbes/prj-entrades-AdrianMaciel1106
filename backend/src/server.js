@@ -11,10 +11,9 @@ import {
   getAllSeats, 
   releaseExpiredReservations, 
   serializeSeat,
-  confirmPurchase,
-  deleteSeats
+  confirmPurchase
 } from './modules/seients/seient.model.js';
-import { createEvent, getAllEvents, deleteEvent } from './modules/events/event.model.js';
+import { createEvent, getAllEvents } from './modules/events/event.model.js';
 import { getNowPlayingMovies } from './modules/movies/movie.service.js';
 import { saveToDisk, loadFromDisk } from './utils/storage.js';
 
@@ -39,51 +38,7 @@ app.get('/api/events/:eventId/seats', (req, res) => {
   res.json({ eventId, seats: seats.map(serializeSeat) });
 });
 
-/**
- * POST /api/events
- * Crea un nuevo evento manual como administrador y genera sus 32 asientos por defecto.
- */
-app.post('/api/events', async (req, res) => {
-  const { nom, data, lloc, imatge, backdrop, sinopsi, rating } = req.body;
-  if (!nom || !data) {
-    return res.status(400).json({ error: 'Noms i data son requerits' });
-  }
 
-  const newId = `evt_${Date.now()}`;
-  const newEvent = createEvent(newId, nom, data, lloc || 'Sala Principal', imatge || '/images/default.png', backdrop || '', sinopsi || '', rating || 0);
-
-  const rows = [
-    { name: 'A', category: 'STANDARD', price: 9.50 },
-    { name: 'B', category: 'STANDARD', price: 9.50 },
-    { name: 'C', category: 'PREMIUM',  price: 12.00 },
-    { name: 'D', category: 'VIP',      price: 18.00 }
-  ];
-
-  rows.forEach(row => {
-    for (let i = 1; i <= 8; i++) {
-      createSeat(newId, `${row.name}${i}`, row.category, row.price);
-    }
-  });
-
-  await persistData();
-  return res.status(201).json({ success: true, event: newEvent });
-});
-
-/**
- * DELETE /api/events/:eventId
- * Elimina un evento existente.
- */
-app.delete('/api/events/:eventId', async (req, res) => {
-  const { eventId } = req.params;
-  deleteEvent(eventId);
-  deleteSeats(eventId);
-  await persistData();
-  
-  // Avisar por web sockets de que se ha borrado el evento (opcional, todos los del home)
-  io.emit('event_deleted', { eventId });
-  
-  return res.json({ success: true });
-});
 
 /**
  * POST /api/events/:eventId/compres (Legacy/REST fallback)

@@ -1,5 +1,16 @@
 <template>
   <div class="event-page">
+    <!-- Indicador de connexió -->
+    <Transition name="fade">
+      <div v-if="!eventStore.isConnected" class="offline-overlay">
+        <div class="offline-content">
+          <svg style="width:32px;height:32px;margin-bottom:10px;animation:pulse 1.5s infinite" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 8v4m0 4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z"></path></svg>
+          <br>
+          Connexió perduda amb el servidor.<br><span style="font-size:0.9rem;font-weight:600;color:#94a3b8">Esperant per reconnectar per evitar conflictes...</span>
+        </div>
+      </div>
+    </Transition>
+
     <header class="event-header" :style="event?.backdrop ? `background-image: linear-gradient(to bottom, rgba(15, 23, 42, 0.4), rgba(15, 23, 42, 1)), url(${event.backdrop})` : ''">
       <div class="header-overlay"></div>
       <div class="header-top">
@@ -225,6 +236,26 @@ const getNotifIcon = (type) => {
   min-height: 100vh;
   color: #f1f5f9;
 }
+
+.offline-overlay {
+  position: fixed;
+  inset: 0;
+  background: rgba(15, 23, 42, 0.9);
+  backdrop-filter: blur(10px);
+  z-index: 10000;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  color: #ef4444;
+  text-align: center;
+  font-weight: 800;
+  font-size: 1.5rem;
+  line-height: 1.4;
+}
+
+.fade-enter-active, .fade-leave-active { transition: opacity 0.5s ease; }
+.fade-enter-from, .fade-leave-to { opacity: 0; }
+
 
 .event-header {
   height: 60vh;

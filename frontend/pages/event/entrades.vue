@@ -68,6 +68,11 @@
         </div>
         
         <div class="ticket-footer">
+          <!-- Email Simulation -->
+          <div class="email-simulation">
+            <svg style="width:20px;height:20px;margin-right:8px;vertical-align:bottom;color:#10b981" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M3 8l7.89 5.26a2 2 0 002.22 0L21 8M5 19h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v10a2 2 0 002 2z"></path></svg>
+            Hem enviat una còpia PDF i facturació al correu de <strong>{{ query.name }}</strong>.
+          </div>
           <NuxtLink to="/" class="btn-home">Tornar a l'inici</NuxtLink>
         </div>
       </div>
@@ -303,6 +308,20 @@ onMounted(() => {
   padding: 30px;
   text-align: center;
   background: #fdfdfd;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 20px;
+}
+
+.email-simulation {
+  background: rgba(16, 185, 129, 0.1);
+  border: 1px solid rgba(16, 185, 129, 0.2);
+  color: #064e3b;
+  padding: 12px 20px;
+  border-radius: 12px;
+  font-size: 0.9rem;
+  max-width: 400px;
 }
 
 .btn-home {
