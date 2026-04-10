@@ -5,6 +5,7 @@
         <div class="logo">FlowPass <span><svg style="width:28px;height:28px;vertical-align:bottom;color:var(--primary)" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 5v2m0 4v2m0 4v2M5 5a2 2 0 00-2 2v3a2 2 0 110 4v3a2 2 0 002 2h14a2 2 0 002-2v-3a2 2 0 110-4V7a2 2 0 00-2-2H5z"></path></svg></span></div>
         <nav class="main-nav">
           <NuxtLink to="/" class="nav-link active">Cartellera</NuxtLink>
+          <NuxtLink to="/admin" class="nav-link admin-link">Admin</NuxtLink>
         </nav>
       </div>
     </header>
@@ -166,6 +167,17 @@ body {
   height: 2px;
   background: var(--primary);
   border-radius: 2px;
+}
+
+.admin-link {
+  background: rgba(99, 102, 241, 0.1);
+  padding: 8px 16px;
+  border-radius: 100px;
+  border: 1px solid rgba(99, 102, 241, 0.2);
+}
+
+.admin-link:hover {
+  background: rgba(99, 102, 241, 0.2);
 }
 
 .hero {
