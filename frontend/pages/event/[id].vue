@@ -162,6 +162,7 @@ import { useEventStore } from '~/stores/useEventStores'
 const router = useRouter()
 const route = useRoute()
 const eventStore = useEventStore()
+const config = useRuntimeConfig()
 
 const event = computed(() => eventStore.eventInfo)
 const seats = computed(() => eventStore.seats)
@@ -171,12 +172,12 @@ onMounted(async () => {
   eventStore.initSocket(eventId)
 
   try {
-    const res = await fetch(`http://localhost:3001/api/events/${eventId}/seats`)
+    const res = await fetch(`${config.public.apiUrl}/events/${eventId}/seats`)
     const data = await res.json()
     
     // Assegurar dades d'esdeveniment si no hi són
     if (!eventStore.eventInfo) {
-      const eRes = await fetch('http://localhost:3001/api/events')
+      const eRes = await fetch(`${config.public.apiUrl}/events`)
       const eData = await eRes.json()
       const current = eData.events.find(e => e.id === eventId)
       if (current) eventStore.setEventInfo(current)

@@ -1,5 +1,5 @@
 <template>
-  <div class="admin-page">
+  <div class="admin-page" v-if="isAuthenticated">
     <header class="admin-header">
       <div class="header-container">
         <div class="header-info">
@@ -119,8 +119,24 @@
 </template>
 
 <script setup>
-const { data: eventsData, refresh } = await useFetch('http://localhost:3001/api/events')
+const config = useRuntimeConfig()
+const router = useRouter()
+const isAuthenticated = ref(false)
+
+const { data: eventsData, refresh } = await useFetch(`${config.public.apiUrl}/events`)
 const events = computed(() => eventsData.value?.events || [])
+
+onMounted(() => {
+  const pwd = prompt("Introdueix la clau d'accés administrador:")
+  const validToken = 'flowpass-admin'
+  if (pwd === validToken) {
+    isAuthenticated.value = true
+    sessionStorage.setItem('admin_token', pwd)
+  } else {
+    alert("Accés denegat!")
+    router.push('/')
+  }
+})
 
 const isSubmitting = ref(false)
 const successMsg = ref('')
@@ -151,9 +167,12 @@ const createEvent = async () => {
   errorMsg.value = ''
   
   try {
-    const res = await fetch('http://localhost:3001/api/events', {
+    const res = await fetch(`${config.public.apiUrl}/events`, {
       method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
+      headers: { 
+        'Content-Type': 'application/json',
+        'Authorization': `Bearer ${sessionStorage.getItem('admin_token')}`
+      },
       body: JSON.stringify(form.value)
     })
     
@@ -174,8 +193,11 @@ const deleteEventItem = async (id) => {
   if (!confirm('Segur que vols eliminar aquest esdeveniment?')) return
   
   try {
-    const res = await fetch(`http://localhost:3001/api/events/${id}`, {
-      method: 'DELETE'
+    const res = await fetch(`${config.public.apiUrl}/events/${id}`, {
+      method: 'DELETE',
+      headers: {
+        'Authorization': `Bearer ${sessionStorage.getItem('admin_token')}`
+      }
     })
     if (!res.ok) throw new Error('Error eliminant dades')
     refresh()

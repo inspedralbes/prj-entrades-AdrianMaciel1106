@@ -22,7 +22,17 @@ const PORT = Number(process.env.PORT) || 3001;
 
 // ── Express ───────────────────────────────────────────────────────────────────
 const app = express();
-app.use(cors());
+const frontendUrl = process.env.FRONTEND_URL || '*';
+app.use(cors({ origin: frontendUrl }));
+
+const adminAuth = (req, res, next) => {
+  const token = req.headers.authorization;
+  const validToken = process.env.ADMIN_TOKEN || 'flowpass-admin';
+  if (token !== `Bearer ${validToken}`) {
+    return res.status(403).json({ error: 'Unauthorized Access' });
+  }
+  next();
+};
 app.use(express.json());
 
 app.get('/', (_req, res) =>
@@ -43,7 +53,7 @@ app.get('/api/events/:eventId/seats', (req, res) => {
  * POST /api/events
  * Crea un nuevo evento manual como administrador y genera sus 32 asientos por defecto.
  */
-app.post('/api/events', async (req, res) => {
+app.post('/api/events', adminAuth, async (req, res) => {
   const { nom, data, lloc, imatge, backdrop, sinopsi, rating } = req.body;
   if (!nom || !data) {
     return res.status(400).json({ error: 'Noms i data son requerits' });
@@ -73,7 +83,7 @@ app.post('/api/events', async (req, res) => {
  * DELETE /api/events/:eventId
  * Elimina un evento existente.
  */
-app.delete('/api/events/:eventId', async (req, res) => {
+app.delete('/api/events/:eventId', adminAuth, async (req, res) => {
   const { eventId } = req.params;
   deleteEvent(eventId);
   deleteSeats(eventId);
@@ -125,7 +135,7 @@ const httpServer = http.createServer(app);
 
 // ── Socket.IO ─────────────────────────────────────────────────────────────────
 const io = new Server(httpServer, {
-  cors: { origin: '*', methods: ['GET', 'POST'] },
+  cors: { origin: frontendUrl, methods: ['GET', 'POST'] },
 });
 
 io.on('connection', (socket) => {

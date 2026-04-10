@@ -84,6 +84,7 @@ import { useEventStore } from '@/stores/useEventStores'
 const route = useRoute()
 const router = useRouter()
 const eventStore = useEventStore()
+const config = useRuntimeConfig()
 
 // Utilitzem info de l'store i no de URL per donar suport a múltiples entrades
 const eventId = route.query.eventId || eventStore.eventInfo?.id
@@ -103,7 +104,7 @@ onMounted(async () => {
   // Si el store no té la info de l'esdeveniment, la busquem
   if (!eventStore.eventInfo) {
     try {
-      const res = await fetch('http://localhost:3001/api/events')
+      const res = await fetch(`${config.public.apiUrl}/events`)
       const data = await res.json()
       const eventData = data.events.find(e => e.id === eventId)
       if (eventData) eventStore.setEventInfo(eventData)

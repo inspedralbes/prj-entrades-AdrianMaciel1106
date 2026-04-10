@@ -62,6 +62,9 @@
 </template>
 
 <script setup>
+const config = useRuntimeConfig()
+const { data: eventsData, pending, error } = await useFetch(`${config.public.apiUrl}/events`)
+
 const searchQuery = ref('')
 const activeCategory = ref('Tots')
 const categories = ['Tots', 'Estrenes', 'Acció', 'Drama', 'Animació']
