@@ -1,5 +1,23 @@
 <template>
-  <div class="admin-page" v-if="isAuthenticated">
+  <!-- Auth Gate -->
+  <div v-if="!isAuthenticated" class="auth-gate">
+    <div class="auth-card">
+      <h1>
+        <svg style="width:32px;height:32px;vertical-align:bottom;margin-right:8px;color:var(--primary)" fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 15v2m-6 4h12a2 2 0 002-2v-6a2 2 0 00-2-2H6a2 2 0 00-2 2v6a2 2 0 002 2zm10-10V7a4 4 0 00-8 0v4h8z"></path></svg>
+        Admin <span>FlowPass</span>
+      </h1>
+      <p>Introdueix la clau d'accés per continuar.</p>
+      <form @submit.prevent="tryLogin" class="auth-form">
+        <input type="password" v-model="loginInput" placeholder="Clau d'accés" autofocus />
+        <button type="submit">Accedir</button>
+      </form>
+      <p v-if="loginError" class="auth-error">Clau incorrecta!</p>
+      <NuxtLink to="/" class="auth-back">← Tornar a la cartellera</NuxtLink>
+    </div>
+  </div>
+
+  <!-- Admin Dashboard -->
+  <div class="admin-page" v-else>
     <header class="admin-header">
       <div class="header-container">
         <div class="header-info">
@@ -122,21 +140,29 @@
 const config = useRuntimeConfig()
 const router = useRouter()
 const isAuthenticated = ref(false)
+const loginInput = ref('')
+const loginError = ref(false)
 
 const { data: eventsData, refresh } = await useFetch(`${config.public.apiUrl}/events`)
 const events = computed(() => eventsData.value?.events || [])
 
 onMounted(() => {
-  const pwd = prompt("Introdueix la clau d'accés administrador:")
-  const validToken = 'flowpass-admin'
-  if (pwd === validToken) {
-    isAuthenticated.value = true
-    sessionStorage.setItem('admin_token', pwd)
-  } else {
-    alert("Accés denegat!")
-    router.push('/')
-  }
+  // Es força a demanar la clau sempre que s'accedeix a la pàgina
+  isAuthenticated.value = false
 })
+
+const tryLogin = () => {
+  const validToken = 'flowpass-admin'
+  if (loginInput.value === validToken) {
+    isAuthenticated.value = true
+    sessionStorage.setItem('admin_token', loginInput.value)
+    loginError.value = false
+  } else {
+    loginError.value = true
+    loginInput.value = ''
+  }
+}
+
 
 const isSubmitting = ref(false)
 const successMsg = ref('')
@@ -208,6 +234,98 @@ const deleteEventItem = async (id) => {
 </script>
 
 <style scoped>
+/* Auth Gate Styles */
+.auth-gate {
+  min-height: 100vh;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background: #0f172a;
+  color: #fff;
+  font-family: 'Outfit', sans-serif;
+  padding: 20px;
+}
+
+.auth-card {
+  background: #1e293b;
+  padding: 40px;
+  border-radius: 24px;
+  border: 1px solid rgba(255,255,255,0.05);
+  text-align: center;
+  max-width: 400px;
+  width: 100%;
+}
+
+.auth-card h1 {
+  font-size: 2rem;
+  margin-bottom: 10px;
+}
+.auth-card h1 span { color: var(--primary); }
+
+.auth-card p {
+  color: #94a3b8;
+  margin-bottom: 30px;
+}
+
+.auth-form {
+  display: flex;
+  flex-direction: column;
+  gap: 15px;
+}
+
+.auth-form input {
+  background: #0f172a;
+  border: 1px solid #334155;
+  color: #fff;
+  padding: 16px;
+  border-radius: 12px;
+  font-size: 1rem;
+  width: 100%;
+  box-sizing: border-box;
+}
+
+.auth-form input:focus {
+  border-color: var(--primary);
+  outline: none;
+}
+
+.auth-form button {
+  background: var(--primary);
+  color: #fff;
+  border: none;
+  padding: 16px;
+  border-radius: 12px;
+  font-weight: 700;
+  font-size: 1.1rem;
+  cursor: pointer;
+  transition: background 0.2s;
+}
+
+.auth-form button:hover {
+  background: var(--primary-dark);
+}
+
+.auth-error {
+  color: #ef4444 !important;
+  margin-top: 15px !important;
+  margin-bottom: 0 !important;
+  font-weight: 600;
+}
+
+.auth-back {
+  display: inline-block;
+  margin-top: 25px;
+  color: #64748b;
+  text-decoration: none;
+  font-size: 0.9rem;
+  transition: color 0.2s;
+}
+
+.auth-back:hover {
+  color: #fff;
+}
+
+/* Admin Dashboard Styles */
 .admin-page {
   background: #0f172a;
   min-height: 100vh;

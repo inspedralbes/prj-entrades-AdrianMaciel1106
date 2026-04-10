@@ -648,7 +648,10 @@ const _inlineRuntimeConfig = {
       }
     }
   },
-  "public": {}
+  "public": {
+    "socketUrl": "http://localhost:3001",
+    "apiUrl": "http://localhost:3001/api"
+  }
 };
 const envOptions = {
   prefix: "NITRO_",
