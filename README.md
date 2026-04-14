@@ -4,7 +4,7 @@
 
 **FlowPass** és una plataforma de venda d'entrades d'alta disponibilitat dissenyada per gestionar esdeveniments massius mitjançant sincronització en temps real. El projecte se centra en la resolució de problemes de concurrència i la gestió eficient de reserves temporals.
 
-## 🚀 Característiques Principals
+## Característiques Principals
 
 - **Sincronització Real-Time**: Implementació total amb **Socket.IO** per a l'actualització instantània de seients entre tots els clients.
 - **Gestió de Concurrència**: Sistema robust al backend que evita que dos usuaris puguin reservar el mateix seient simultàniament ("Double Booking").
@@ -12,13 +12,13 @@
 - **Disseny Premium**: UI/UX moderna construïda amb **Nuxt 3** i **Vanilla CSS**, seguint un sistema de disseny "Glassmorphism" i paletes de colors harmonioses.
 - **Arquitectura Basada en Especificacions**: Desenvolupament dirigit per documentació tècnica (Spec-Driven Development) ubicada a `/specs`.
 
-## 🛠️ Stack Tecnològic
+## Stack Tecnològic
 
 - **Frontend**: Nuxt 3 (Vue.js), Pinia (Estat Global), Socket.io-client.
 - **Backend**: Node.js, Express, Socket.io, MySQL (vía `mysql2`) amb fallback de persistència JSON.
 - **DevOps**: GitHub Actions (preparat), Docker (preparat).
 
-## 📂 Estructura del Projecte
+## Estructura del Projecte
 
 ```bash
 ├── frontend/          # Aplicació Client (Nuxt 3)
@@ -29,7 +29,7 @@
 └── tests/             # Scripts de validació de concurrència
 ```
 
-## 🚥 Com començar (Instal·lació)
+## Com començar (Instal·lació)
 
 ### Requisits
 - Node.js v18+
@@ -51,14 +51,14 @@ npm run dev
 ```
 L'aplicació estarà disponible a `http://localhost:3000`.
 
-## 🧪 Validació de Concurrència
+## Validació de Concurrència
 Pots comprovar la robustesa del sistema executant el test de cursa:
 ```bash
 cd backend
 node tests/test_concurrency.js
 ```
 
-## 📄 Documentació
+## Documentació
 Consulta la memòria completa de l'activitat a: `[docs/documentacio_activitat.md](./docs/documentacio_activitat.md)`
 
 ---
