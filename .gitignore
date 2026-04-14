@@ -1,0 +1,25 @@
+# Node.js
+**/node_modules/
+npm-debug.log*
+yarn-debug.log*
+yarn-error.log*
+
+# Environment variables
+.env
+**/.env
+**/.env.local
+
+# Project Specific
+backend/storage/*.json
+!backend/storage/placeholder.txt
+
+# Nuxt 3 (Frontend)
+frontend/.nuxt/
+frontend/.output/
+frontend/.nitro/
+frontend/.cache/
+frontend/dist/
+
+# OS Files
+.DS_Store
+Thumbs.db
