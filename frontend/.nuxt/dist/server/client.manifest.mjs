@@ -1,1 +1,4 @@
-export default ({"@vite/client":{prefetch:!0,isEntry:!0,file:"@vite/client",css:[],module:!0,resourceType:"script",dynamicImports:void 0},"C:/Users/Andreia/prj-entrades-AdrianMaciel1106/frontend/node_modules/nuxt/dist/app/entry.js":{resourceType:"script",module:!0,prefetch:!0,preload:!0,isEntry:!0,file:"C:/Users/Andreia/prj-entrades-AdrianMaciel1106/frontend/node_modules/nuxt/dist/app/entry.js",dynamicImports:void 0}})
+
+import { viteNodeFetch } from "file:///C:/Users/Andreia/prj-entrades-AdrianMaciel1106/frontend/node_modules/@nuxt/vite-builder/dist/vite-node.mjs"
+export default () => viteNodeFetch.getManifest()
+    

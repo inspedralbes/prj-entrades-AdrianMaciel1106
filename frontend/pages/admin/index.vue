@@ -110,6 +110,10 @@
         <!-- Live Activity -->
         <section class="activity-section">
           <div class="glass-card">
+            <h2>Estadístiques de <span>Vendes</span></h2>
+            <AdminChart :events="events" />
+          </div>
+          <div class="glass-card">
             <h2>Activitat en <span>Directe</span></h2>
             <div class="activity-list">
               <div v-for="e in events" :key="e.id" class="activity-item">
@@ -415,6 +419,7 @@ const deleteEventItem = async (id) => {
   border: 1px solid rgba(255,255,255,0.05);
   border-radius: 32px;
   padding: 40px;
+  margin-bottom: 2rem;
 }
 
 .glass-card h2 { font-size: 1.5rem; margin-bottom: 30px; font-weight: 800; }
